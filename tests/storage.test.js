@@ -3,7 +3,9 @@ import { SKINS } from '../src/game/level-data.js';
 import {
   createDefaultProfile,
   getUnlockedSkinIds,
-  mergeLevelResult
+  loadProfile,
+  mergeLevelResult,
+  STORAGE_KEY
 } from '../src/storage.js';
 
 describe('storage profile', () => {
@@ -22,14 +24,14 @@ describe('storage profile', () => {
     const afterFirst = mergeLevelResult(profile, 0, {
       completed: true,
       timeMs: 14000,
-      launches: 4,
+      jumps: 9,
       starsCollected: 2,
       medal: 'silver'
     });
     const afterSecond = mergeLevelResult(afterFirst, 0, {
       completed: true,
       timeMs: 10000,
-      launches: 5,
+      jumps: 11,
       starsCollected: 3,
       medal: 'gold'
     });
@@ -37,7 +39,34 @@ describe('storage profile', () => {
     expect(afterSecond.unlockedLevelIndex).toBe(1);
     expect(afterSecond.levels[0]).toMatchObject({
       bestTimeMs: 10000,
-      bestLaunches: 4,
+      bestJumps: 9,
+      starsCollected: 3,
+      medal: 'gold'
+    });
+  });
+
+  it('normalizes legacy launch records into best jumps', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        unlockedLevelIndex: 1,
+        selectedSkin: 'mint',
+        language: 'en',
+        soundEnabled: true,
+        levels: {
+          0: {
+            bestTimeMs: 12000,
+            bestLaunches: 7,
+            starsCollected: 3,
+            medal: 'gold'
+          }
+        }
+      })
+    );
+
+    expect(loadProfile().levels[0]).toMatchObject({
+      bestTimeMs: 12000,
+      bestJumps: 7,
       starsCollected: 3,
       medal: 'gold'
     });
@@ -46,16 +75,12 @@ describe('storage profile', () => {
   it('unlocks the full themed skin lineup from total collected stars', () => {
     const profile = {
       ...createDefaultProfile(),
-      levels: {
-        0: { starsCollected: 3, medal: 'gold' },
-        1: { starsCollected: 3, medal: 'gold' },
-        2: { starsCollected: 3, medal: 'gold' },
-        3: { starsCollected: 3, medal: 'gold' },
-        4: { starsCollected: 3, medal: 'gold' },
-        5: { starsCollected: 3, medal: 'gold' },
-        6: { starsCollected: 3, medal: 'gold' },
-        7: { starsCollected: 3, medal: 'gold' }
-      }
+      levels: Object.fromEntries(
+        Array.from({ length: 8 }, (_, index) => [
+          index,
+          { starsCollected: 3, medal: 'gold' }
+        ])
+      )
     };
 
     expect(getUnlockedSkinIds(profile, SKINS)).toEqual([

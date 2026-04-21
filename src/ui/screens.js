@@ -238,6 +238,21 @@ export function renderHud(root, model = {}) {
           }
         </div>
         ${
+          model.showTouchControls
+            ? `
+              <div class="hud-touch-controls">
+                <div class="hud-touch-joystick" data-role="touch-joystick">
+                  <div
+                    class="hud-touch-joystick__knob"
+                    style="transform: translate(${Number(model.joystickOffsetX ?? 0)}px, ${Number(model.joystickOffsetY ?? 0)}px)"
+                  ></div>
+                </div>
+                <button type="button" class="hud-touch-jump" data-action="touch-jump">${escapeHtml(model.jumpLabel || 'Jump')}</button>
+              </div>
+            `
+            : ''
+        }
+        ${
           model.overlayMessage
             ? `<p class="hud-center-message hud-center-message--${escapeHtml(model.overlayTone || 'info')}">${escapeHtml(model.overlayMessage)}</p>`
             : ''
@@ -252,6 +267,7 @@ export function renderResultsScreen(root, model = {}) {
   const medal = result.medal || 'bronze';
   const timeLabel = result.timeLabel || formatTimeMs(result.timeMs);
   const summary = result.summary || model.summary || 'The door opened and the blob made it through.';
+  const jumpCount = result.jumps ?? result.launches;
 
   renderEmptyState(
     root,
@@ -265,7 +281,7 @@ export function renderResultsScreen(root, model = {}) {
         <p class="results-medal">${escapeHtml(model.medalText || `Medal: ${medal}`)}</p>
         <ul class="screen-stats">
           ${listItem(model.timeStatLabel || 'Time', timeLabel || '--')}
-          ${listItem(model.launchesStatLabel || 'Launches', Number.isFinite(result.launches) ? String(result.launches) : '--')}
+          ${listItem(model.jumpsStatLabel || model.launchesStatLabel || 'Jumps', Number.isFinite(jumpCount) ? String(jumpCount) : '--')}
           ${listItem(model.starsStatLabel || 'Stars', Number.isFinite(result.starsCollected) ? String(result.starsCollected) : '--')}
         </ul>
         <p class="screen-help">${escapeHtml(summary)}</p>

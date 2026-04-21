@@ -34,22 +34,36 @@ function pickHigherNumber(current, incoming) {
 }
 
 export function evaluateRun(level, stats) {
-  const { goldTime, silverTime, goldLaunches, silverLaunches } = level.medalTargets;
+  const medalTargets = level?.medalTargets ?? {};
+  const goldTime = medalTargets.goldTime ?? Number.POSITIVE_INFINITY;
+  const silverTime = medalTargets.silverTime ?? Number.POSITIVE_INFINITY;
+  const goldJumps = medalTargets.goldJumps ?? medalTargets.goldLaunches ?? Number.POSITIVE_INFINITY;
+  const silverJumps =
+    medalTargets.silverJumps ?? medalTargets.silverLaunches ?? Number.POSITIVE_INFINITY;
+  const jumps = stats.jumps ?? stats.launches ?? Number.POSITIVE_INFINITY;
+  const starsCollected = stats.starsCollected ?? 0;
+  const starsTotal = level?.starsTotal ?? 0;
   const meetsGold =
     stats.timeMs <= goldTime &&
-    stats.launches <= goldLaunches &&
-    stats.starsCollected === level.starsTotal;
-  const meetsSilver = stats.timeMs <= silverTime && stats.launches <= silverLaunches;
+    jumps <= goldJumps &&
+    starsCollected === starsTotal;
+  const meetsSilver = stats.timeMs <= silverTime && jumps <= silverJumps;
+  const result = {
+    ...stats,
+    jumps,
+    launches: stats.launches ?? jumps,
+    starsCollected
+  };
 
   if (meetsGold) {
-    return { ...stats, medal: 'gold', perfect: true, completed: true };
+    return { ...result, medal: 'gold', perfect: true, completed: true };
   }
 
   if (meetsSilver) {
-    return { ...stats, medal: 'silver', perfect: false, completed: true };
+    return { ...result, medal: 'silver', perfect: false, completed: true };
   }
 
-  return { ...stats, medal: 'bronze', perfect: false, completed: true };
+  return { ...result, medal: 'bronze', perfect: false, completed: true };
 }
 
 export function pickBetterMedal(current, incoming) {
@@ -72,9 +86,15 @@ export function unlocksNextLevel(currentIndex, result, levelCount) {
 }
 
 export function mergeRunRecord(previous = {}, result = {}) {
+  const bestJumps = pickLowerNumber(
+    previous.bestJumps ?? previous.bestLaunches,
+    result.jumps ?? result.launches
+  );
+
   return {
     bestTimeMs: pickLowerNumber(previous.bestTimeMs, result.timeMs),
-    bestLaunches: pickLowerNumber(previous.bestLaunches, result.launches),
+    bestJumps,
+    bestLaunches: bestJumps,
     starsCollected: pickHigherNumber(previous.starsCollected, result.starsCollected),
     medal: pickBetterMedal(previous.medal, result.medal)
   };

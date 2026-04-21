@@ -13,13 +13,19 @@ import { createAudioManager } from './game/audio.js';
 import { createFloatingText, createImpactBurst, stepEffects } from './game/effects.js';
 import { createGameSession, resetGameSession, stepGameSession } from './game/game.js';
 import {
-  beginPointerCharge,
+  beginJumpTouch,
+  beginJoystick,
   createInputState,
-  releasePointerCharge,
-  updateDragIntent
+  endJumpTouch,
+  endJoystick,
+  markJumpConsumed,
+  setJumpPressed,
+  setKeyboardDirection,
+  updateJoystick
 } from './game/input.js';
 import { LEVELS, SKINS } from './game/level-data.js';
 import { renderFrame } from './game/render/canvas-renderer.js';
+import { createCameraState, updateCamera } from './game/render/camera.js';
 import {
   getUnlockedSkinIds,
   loadProfile,
@@ -52,6 +58,7 @@ let session = createGameSession({
   levelIndex: 0,
   skinId: appState.skinId
 });
+let camera = createCameraState();
 
 const audio = createAudioManager();
 audio.setEnabled(appState.soundEnabled);
@@ -136,6 +143,7 @@ function createFreshSession(levelIndex = appState.selectedLevel) {
     levelIndex,
     skinId: appState.skinId
   });
+  camera = createCameraState();
   paused = false;
   hudMenuOpen = false;
   clearOverlayMessage();
@@ -156,6 +164,7 @@ function retryLevel() {
     levelIndex: appState.selectedLevel,
     skinId: appState.skinId
   });
+  camera = createCameraState();
   paused = false;
   hudMenuOpen = false;
   clearOverlayMessage();
@@ -225,19 +234,13 @@ function toggleSound() {
   renderUi();
 }
 
-function pointFromEvent(event) {
-  const rect = canvas.getBoundingClientRect();
-
-  return {
-    id: event.pointerId,
-    x: ((event.clientX - rect.left) / rect.width) * canvas.width,
-    y: ((event.clientY - rect.top) / rect.height) * canvas.height
-  };
-}
-
 function renderUi() {
   const languageOptions = getLanguageOptions();
   const orientationHint = getOrientationHint();
+  const isTouchUi =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches;
 
   if (appState.screen === 'title') {
     const skin = getSkinPresentation(appState.skinId);
@@ -310,7 +313,7 @@ function renderUi() {
       title: copy('results.title'),
       medalText: `${copy('common.medal')}: ${medalLabel}`,
       timeStatLabel: copy('common.time'),
-      launchesStatLabel: copy('common.launches'),
+      jumpsStatLabel: copy('common.jumps'),
       starsStatLabel: copy('common.stars'),
       result,
       retryLabel: copy('common.retry'),
@@ -339,7 +342,11 @@ function renderUi() {
     settingsLabel: copy('hud.settings'),
     hudMenuOpen,
     overlayMessage: overlayMessage?.text ?? null,
-    overlayTone: overlayMessage?.tone ?? 'info'
+    overlayTone: overlayMessage?.tone ?? 'info',
+    showTouchControls: isTouchUi,
+    jumpLabel: copy('hud.jump'),
+    joystickOffsetX: inputState.joystick.knob.x,
+    joystickOffsetY: inputState.joystick.knob.y
   });
 }
 
@@ -352,14 +359,7 @@ function renderWorld() {
     blob: {
       ...session.blob,
       skinId: appState.skinId,
-      status:
-        session.status === 'won'
-          ? 'goal'
-          : inputState.charging
-            ? 'charge'
-            : session.status === 'failed'
-              ? 'hurt'
-              : 'idle'
+      status: session.status === 'failed' ? 'hurt' : session.status
     },
     effects,
     hint:
@@ -370,7 +370,8 @@ function renderWorld() {
           : appState.screen === 'skin-picker'
             ? copy('world.skinPicker')
             : null,
-    status: session.status
+    status: session.status,
+    camera
   });
 }
 
@@ -431,61 +432,68 @@ uiRoot.addEventListener('click', (event) => {
   }
 });
 
-canvas.addEventListener('pointerdown', (event) => {
+uiRoot.addEventListener('pointerdown', (event) => {
   if (appState.screen !== 'playing' || paused) {
     return;
   }
 
-  hudMenuOpen = false;
-  const point = pointFromEvent(event);
-  inputState = beginPointerCharge(
-    inputState,
-    event.pointerId,
-    Boolean(session.blob.canLaunch)
-  );
-
-  if (!inputState.charging) {
+  if (event.target.closest('.hud-touch-jump')) {
+    inputState = beginJumpTouch(inputState, event.pointerId);
+    event.target.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
     return;
   }
 
-  inputState = updateDragIntent(inputState, point, session.blob.position);
-  canvas.setPointerCapture(event.pointerId);
-  event.preventDefault();
+  const stick = event.target.closest('.hud-touch-joystick');
+
+  if (stick) {
+    const rect = stick.getBoundingClientRect();
+    inputState = beginJoystick(inputState, event.pointerId, {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    });
+    inputState = updateJoystick(inputState, {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
+    event.target.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  }
 });
 
-canvas.addEventListener('pointermove', (event) => {
-  if (appState.screen !== 'playing' || paused || !inputState.charging) {
-    return;
+uiRoot.addEventListener('pointermove', (event) => {
+  if (inputState.joystick.pointerId === event.pointerId) {
+    inputState = updateJoystick(inputState, {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
   }
-
-  inputState = updateDragIntent(
-    inputState,
-    pointFromEvent(event),
-    session.blob.position
-  );
 });
 
-function endCharge(event) {
-  if (appState.screen !== 'playing' || paused || !inputState.charging) {
-    return;
-  }
-
-  inputState = updateDragIntent(
-    inputState,
-    pointFromEvent(event),
-    session.blob.position
-  );
-  inputState = releasePointerCharge(inputState);
-  event.preventDefault();
+function endTouchInput(event) {
+  inputState = endJoystick(inputState, event.pointerId);
+  inputState = endJumpTouch(inputState, event.pointerId);
 }
 
-canvas.addEventListener('pointerup', endCharge);
-canvas.addEventListener('pointercancel', endCharge);
-canvas.addEventListener('contextmenu', (event) => {
-  event.preventDefault();
-});
+uiRoot.addEventListener('pointerup', endTouchInput);
+uiRoot.addEventListener('pointercancel', endTouchInput);
 
 window.addEventListener('keydown', (event) => {
+  if (event.key === 'a' || event.key === 'ArrowLeft') {
+    inputState = setKeyboardDirection(inputState, 'left', true);
+  }
+
+  if (event.key === 'd' || event.key === 'ArrowRight') {
+    inputState = setKeyboardDirection(inputState, 'right', true);
+  }
+
+  if (event.key === ' ' || event.key === 'Spacebar') {
+    inputState = setJumpPressed(inputState, true);
+    event.preventDefault();
+  }
+
   if (event.key.toLowerCase() === 'r' && appState.screen === 'playing') {
     retryLevel();
   }
@@ -496,10 +504,25 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
+window.addEventListener('keyup', (event) => {
+  if (event.key === 'a' || event.key === 'ArrowLeft') {
+    inputState = setKeyboardDirection(inputState, 'left', false);
+  }
+
+  if (event.key === 'd' || event.key === 'ArrowRight') {
+    inputState = setKeyboardDirection(inputState, 'right', false);
+  }
+
+  if (event.key === ' ' || event.key === 'Spacebar') {
+    inputState = setJumpPressed(inputState, false);
+    event.preventDefault();
+  }
+});
+
 function handleSessionEvents(previousSession) {
   const frameEvents = session.lastFrameEvents;
 
-  if (frameEvents.launched) {
+  if (frameEvents.jumped ?? frameEvents.launched) {
     audio.playBoing();
     effects.push(createImpactBurst(session.blob.position.x, session.blob.position.y, 0.8));
   }
@@ -587,6 +610,18 @@ function frame(now) {
     }
   }
 
+  if (appState.screen === 'playing') {
+    camera = updateCamera(
+      camera,
+      session.blob,
+      session.level,
+      { width: canvas.width, height: canvas.height },
+      dt
+    );
+  } else {
+    camera = createCameraState();
+  }
+
   if (appState.screen === 'playing' && !paused) {
     const previousSession = session;
     session = stepGameSession(session, {
@@ -595,10 +630,7 @@ function frame(now) {
     });
     handleSessionEvents(previousSession);
     renderUi();
-
-    if (inputState.released) {
-      inputState = createInputState();
-    }
+    inputState = markJumpConsumed(inputState);
   }
 
   renderWorld();

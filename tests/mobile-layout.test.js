@@ -41,4 +41,13 @@ describe('mobile layout stylesheet', () => {
     expect(stylesheet).toMatch(/\.hud-settings-menu\s*\{[^}]*pointer-events:\s*auto;/s);
     expect(stylesheet).toMatch(/\.hud-settings-menu \.screen-button\s*\{[^}]*pointer-events:\s*auto;/s);
   });
+
+  it('defines bottom-corner touch controls for movement and jump', () => {
+    expect(stylesheet).toContain('.hud-touch-controls');
+    expect(stylesheet).toContain('.hud-touch-joystick');
+    expect(stylesheet).toContain('.hud-touch-jump');
+    expect(stylesheet).toMatch(/\.hud-touch-controls\s*\{[^}]*pointer-events:\s*none;/s);
+    expect(stylesheet).toMatch(/\.hud-touch-joystick\s*\{[^}]*pointer-events:\s*auto;/s);
+    expect(stylesheet).toMatch(/\.hud-touch-jump\s*\{[^}]*pointer-events:\s*auto;/s);
+  });
 });

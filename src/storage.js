@@ -18,7 +18,7 @@ function normalizeLevelRecords(levels) {
   return Object.fromEntries(
     Object.entries(levels).map(([levelIndex, record]) => [
       levelIndex,
-      mergeRunRecord(record)
+      mergeRunRecord(record, {})
     ])
   );
 }

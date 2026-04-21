@@ -317,10 +317,13 @@ export function renderFrame(ctx, snapshot = {}) {
   const runtime = snapshot.runtime ?? {};
   const width = snapshot.width ?? ctx.canvas.width ?? 960;
   const height = snapshot.height ?? ctx.canvas.height ?? 540;
+  const camera = snapshot.camera ?? { x: 0, y: 0 };
   const brokenFloorIds = new Set(runtime.brokenFloorIds ?? []);
 
   ctx.clearRect(0, 0, width, height);
   drawPaperBackground(ctx, width, height);
+  ctx.save();
+  ctx.translate(-camera.x, 0);
 
   if (level) {
     (level.platforms ?? []).forEach((surface) => {
@@ -372,5 +375,6 @@ export function renderFrame(ctx, snapshot = {}) {
   }
 
   drawEffects(ctx, snapshot.effects ?? []);
+  ctx.restore();
   drawHint(ctx, snapshot.hint);
 }

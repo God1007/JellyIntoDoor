@@ -1,4 +1,8 @@
-import { createBlobState, getLaunchVelocity } from './blob.js';
+import {
+  applyHorizontalControl,
+  applyJumpImpulse,
+  createBlobState
+} from './blob.js';
 import { LEVELS } from './level-data.js';
 import { integrateVelocity, resolveWorldCollision } from './physics.js';
 import { evaluateRun } from './scoring.js';
@@ -33,7 +37,11 @@ function applyAbilityTimer(blob, dt) {
     return blob;
   }
 
-  const nextTimer = (blob.abilityTimerMs ?? ABILITY_DURATION_MS) - dt * 1000;
+  const remainingMs =
+    typeof blob.abilityTimerMs === 'number' && blob.abilityTimerMs > 0
+      ? blob.abilityTimerMs
+      : ABILITY_DURATION_MS;
+  const nextTimer = remainingMs - dt * 1000;
 
   if (nextTimer <= 0) {
     return {
@@ -75,30 +83,29 @@ function applyLaunchBoost(blob, launchBoost) {
       y: blob.velocity.y + launchBoost.y
     },
     grounded: false,
+    canJump: false,
     canLaunch: false,
-    stuckToWall: false
+    stuckToWall: false,
+    wallNormalX: 0
   };
 }
 
-function isLaunchRequested(input) {
-  return Boolean(
-    input?.released &&
-      (input.charging || input.dragDistance > 0 || input.dragPower > 0)
-  );
+function isJumpRequested(input) {
+  return Boolean(input?.jumpPressed);
 }
 
-function canBlobLaunch(blob) {
-  return Boolean(blob.canLaunch);
+function canBlobJump(blob) {
+  return Boolean(blob.grounded || blob.stuckToWall || blob.canJump);
 }
 
-function shouldStickToWall(blob, collision) {
+function getStickyWallCollision(blob, collision) {
   if (blob.ability !== 'sticky') {
-    return false;
+    return null;
   }
 
-  return (collision.collisions ?? []).some((entry) => {
+  return (collision.collisions ?? []).find((entry) => {
     return entry.wall && entry.rect?.type === 'sticky-wall';
-  });
+  }) ?? null;
 }
 
 function createHeldWallCollision(blob) {
@@ -121,6 +128,7 @@ export function createGameSession({ levelIndex, skinId = 'peach' }) {
     levelIndex: resolvedIndex,
     level,
     status: 'playing',
+    jumps: 0,
     launches: 0,
     elapsedMs: 0,
     collectedStars: 0,
@@ -131,6 +139,7 @@ export function createGameSession({ levelIndex, skinId = 'peach' }) {
     runtime: createLevelRuntime(level),
     result: null,
     lastFrameEvents: {
+      jumped: false,
       launched: false,
       pickedAbility: null,
       collectedStars: [],
@@ -152,7 +161,8 @@ export function resetGameSession(session, overrides = {}) {
 export function buildSessionResult(session) {
   return evaluateRun(session.level, {
     timeMs: Math.round(session.elapsedMs),
-    launches: session.launches,
+    jumps: session.jumps,
+    launches: session.jumps,
     starsCollected: session.runtime.collectedStarIds.length
   });
 }
@@ -164,63 +174,63 @@ export function stepGameSession(session, frame) {
 
   const level = session.level ?? LEVELS[session.levelIndex] ?? LEVELS[0];
   const dt = frame.dt ?? 1 / 60;
-  let launches = session.launches;
+  let jumps = session.jumps ?? session.launches ?? 0;
   let blob = applyAbilityTimer(session.blob, dt);
-  let launched = false;
+  let jumped = false;
 
   if (blob.stuckToWall && blob.ability !== 'sticky') {
     blob = {
       ...blob,
+      canJump: false,
       canLaunch: false,
-      stuckToWall: false
+      stuckToWall: false,
+      wallNormalX: 0
     };
   }
 
-  if (isLaunchRequested(frame.input) && canBlobLaunch(blob)) {
-    const launch = getLaunchVelocity(frame.input.dragVector, blob.ability);
-    blob = {
-      ...blob,
-      velocity: {
-        x: launch.x,
-        y: launch.y
-      },
-      grounded: false,
-      canLaunch: false,
-      stuckToWall: false
-    };
-    launches += 1;
-    launched = true;
+  blob = applyHorizontalControl(blob, frame.input?.moveX ?? 0, dt);
+
+  if (isJumpRequested(frame.input) && canBlobJump(blob)) {
+    blob = applyJumpImpulse(blob, frame.input?.moveX ?? 0);
+    jumps += 1;
+    jumped = true;
   }
 
-  const collision = blob.stuckToWall
-    ? createHeldWallCollision(blob)
-    : resolveWorldCollision(
-        integrateVelocity(
-          {
-            ...blob,
-            acceleration: {
-              x: 0,
-              y: blob.ability === 'heavy' ? 900 : 0
+  const collision =
+    blob.stuckToWall && !jumped
+      ? createHeldWallCollision(blob)
+      : resolveWorldCollision(
+          integrateVelocity(
+            {
+              ...blob,
+              acceleration: {
+                x: 0,
+                y: blob.ability === 'heavy' ? 900 : 0
+              },
+              force: {
+                x: 0,
+                y: 0
+              }
             },
-            force: {
-              x: 0,
-              y: 0
-            }
-          },
-          dt
-        ),
-        buildLevelSurfaces(level, session.runtime),
-        {
-          restitution: blob.ability === 'elastic' ? 0.34 : 0.16,
-          friction: 0.12
-        }
-      );
-  const stuckToWall = blob.stuckToWall || shouldStickToWall(blob, collision);
+            dt
+          ),
+          buildLevelSurfaces(level, session.runtime),
+          {
+            restitution: blob.ability === 'elastic' ? 0.34 : 0.16,
+            friction: 0.12
+          }
+        );
+  const wallCollision = getStickyWallCollision(blob, collision);
+  const stuckToWall = Boolean(wallCollision) || (blob.stuckToWall && !jumped);
+  const wallNormalX = wallCollision?.normal?.x ?? (stuckToWall ? blob.wallNormalX : 0);
+
   blob = {
     ...collision.body,
     grounded: stuckToWall ? false : collision.grounded,
-    canLaunch: stuckToWall || collision.grounded,
+    canJump: collision.grounded || stuckToWall,
+    canLaunch: collision.grounded || stuckToWall,
     stuckToWall,
+    wallNormalX,
     velocity: stuckToWall ? { x: 0, y: 0 } : collision.body.velocity,
     skinId: session.blob.skinId
   };
@@ -256,7 +266,8 @@ export function stepGameSession(session, frame) {
   const next = {
     ...session,
     level,
-    launches,
+    jumps,
+    launches: jumps,
     elapsedMs: session.elapsedMs + dt * 1000,
     collectedStars: runtimeStep.runtime.collectedStarIds.length,
     blob,
@@ -264,7 +275,8 @@ export function stepGameSession(session, frame) {
     status,
     result,
     lastFrameEvents: {
-      launched,
+      jumped,
+      launched: jumped,
       pickedAbility: runtimeStep.pickedAbility,
       collectedStars: runtimeStep.collectedStars,
       enteredDoor: runtimeStep.enteredDoor,

@@ -148,4 +148,43 @@ describe('render helpers', () => {
 
     expect(root.querySelector('.orientation-banner')?.textContent).toContain('Landscape recommended');
   });
+
+  it('renders mobile touch controls inside the hud when requested', () => {
+    const root = document.createElement('section');
+
+    renderHud(root, {
+      levelText: 'Level 1-1',
+      starsText: 'Stars 1 / 3',
+      timeMs: 2500,
+      settingsLabel: 'Settings',
+      showTouchControls: true,
+      jumpLabel: 'Jump',
+      joystickOffsetX: 18,
+      joystickOffsetY: -10
+    });
+
+    expect(root.querySelector('.hud-touch-controls')).toBeTruthy();
+    expect(root.querySelector('.hud-touch-joystick__knob')?.getAttribute('style')).toContain(
+      'translate(18px, -10px)'
+    );
+    expect(root.querySelector('[data-action="touch-jump"]')?.textContent).toContain('Jump');
+  });
+
+  it('renders jump counts instead of launches in the results screen', () => {
+    const root = document.createElement('section');
+
+    renderResultsScreen(root, {
+      language: 'en',
+      result: {
+        medal: 'gold',
+        jumps: 9,
+        starsCollected: 3,
+        timeMs: 8000
+      },
+      jumpsStatLabel: 'Jumps'
+    });
+
+    expect(root.textContent).toContain('Jumps');
+    expect(root.textContent).toContain('9');
+  });
 });

@@ -4,63 +4,73 @@ import { createGameSession, stepGameSession } from '../src/game/game.js';
 import { createLevelRuntime } from '../src/game/level-runtime.js';
 
 describe('game session', () => {
-  it('starts a run with zero launches and the requested level index', () => {
+  it('starts a run with zero jumps and the requested level index', () => {
     const session = createGameSession({ levelIndex: 2 });
 
     expect(session).toMatchObject({
       levelIndex: 2,
-      launches: 0,
+      jumps: 0,
       status: 'playing'
     });
     expect(session.blob.position).toBeTruthy();
     expect(session.runtime).toBeTruthy();
   });
 
-  it('increments launches when a charged drag is released', () => {
+  it('accelerates horizontally when move input is held', () => {
     const session = createGameSession({ levelIndex: 0 });
     const next = stepGameSession(session, {
       dt: 1 / 60,
-      input: {
-        released: true,
-        charging: true,
-        dragVector: { x: -80, y: -20 }
-      }
+      input: { moveX: 1, jumpPressed: false, jumpHeld: false }
     });
 
-    expect(next.launches).toBe(1);
     expect(next.blob.velocity.x).toBeGreaterThan(0);
   });
 
-  it('does not relaunch while airborne without a launch-ready state', () => {
+  it('increments jumps when a grounded jump is requested', () => {
     const session = createGameSession({ levelIndex: 0 });
     const next = stepGameSession(
       {
         ...session,
-        launches: 1,
         blob: {
           ...session.blob,
-          position: { x: 240, y: 180 },
-          velocity: { x: 90, y: -120 },
-          grounded: false,
-          canLaunch: false,
-          stuckToWall: false
+          grounded: true,
+          canJump: true
         }
       },
       {
         dt: 1 / 60,
-        input: {
-          released: true,
-          charging: true,
-          dragVector: { x: -80, y: 0 }
-        }
+        input: { moveX: 0, jumpPressed: true, jumpHeld: true }
       }
     );
 
-    expect(next.launches).toBe(1);
-    expect(next.lastFrameEvents.launched).toBe(false);
+    expect(next.jumps).toBe(1);
+    expect(next.blob.velocity.y).toBeLessThan(0);
   });
 
-  it('rearms a sticky blob after it latches onto a sticky wall', () => {
+  it('does not double jump while airborne', () => {
+    const session = createGameSession({ levelIndex: 0 });
+    const next = stepGameSession(
+      {
+        ...session,
+        jumps: 1,
+        blob: {
+          ...session.blob,
+          grounded: false,
+          canJump: false,
+          velocity: { x: 90, y: -120 }
+        }
+      },
+      {
+        dt: 1 / 60,
+        input: { moveX: 0, jumpPressed: true, jumpHeld: true }
+      }
+    );
+
+    expect(next.jumps).toBe(1);
+    expect(next.lastFrameEvents.jumped).toBe(false);
+  });
+
+  it('allows a sticky blob to jump away after latching to a sticky wall', () => {
     const level = {
       id: 'sticky-test',
       name: 'Sticky Test',
@@ -69,8 +79,8 @@ describe('game session', () => {
       medalTargets: {
         goldTime: 1000,
         silverTime: 1500,
-        goldLaunches: 1,
-        silverLaunches: 2
+        goldJumps: 3,
+        silverJumps: 5
       },
       starsTotal: 0,
       platforms: [],
@@ -94,50 +104,42 @@ describe('game session', () => {
     };
     const blob = createBlobState({ x: 182, y: 140 });
     blob.ability = 'sticky';
-    blob.abilityTimerMs = 6500;
     blob.velocity = { x: 220, y: 0 };
-    blob.canLaunch = false;
     blob.skinId = 'peach';
-    const session = {
-      levelIndex: 0,
-      level,
-      status: 'playing',
-      launches: 1,
-      elapsedMs: 0,
-      collectedStars: 0,
-      blob,
-      runtime: createLevelRuntime(level),
-      result: null,
-      lastFrameEvents: {
-        launched: false,
-        pickedAbility: null,
-        collectedStars: [],
-        enteredDoor: false,
-        failed: false
+    const latched = stepGameSession(
+      {
+        levelIndex: 0,
+        level,
+        status: 'playing',
+        jumps: 0,
+        elapsedMs: 0,
+        collectedStars: 0,
+        blob,
+        runtime: createLevelRuntime(level),
+        result: null,
+        lastFrameEvents: {
+          jumped: false,
+          collectedStars: [],
+          enteredDoor: false,
+          blockedDoor: false,
+          remainingStars: 0,
+          failed: false
+        }
+      },
+      {
+        dt: 1 / 60,
+        input: { moveX: 0, jumpPressed: false, jumpHeld: false }
       }
-    };
-
-    const latched = stepGameSession(session, {
+    );
+    const released = stepGameSession(latched, {
       dt: 1 / 60,
-      input: {}
+      input: { moveX: -1, jumpPressed: true, jumpHeld: true }
     });
 
     expect(latched.blob.stuckToWall).toBe(true);
-    expect(latched.blob.canLaunch).toBe(true);
-    expect(latched.blob.velocity).toEqual({ x: 0, y: 0 });
-
-    const relaunched = stepGameSession(latched, {
-      dt: 1 / 60,
-      input: {
-        released: true,
-        charging: true,
-        dragVector: { x: 70, y: -30 }
-      }
-    });
-
-    expect(relaunched.launches).toBe(2);
-    expect(relaunched.lastFrameEvents.launched).toBe(true);
-    expect(relaunched.blob.stuckToWall).toBe(false);
+    expect(released.jumps).toBe(1);
+    expect(released.blob.stuckToWall).toBe(false);
+    expect(released.blob.velocity.y).toBeLessThan(0);
   });
 
   it('keeps the session playing when the blob touches the door before collecting every star', () => {
@@ -146,7 +148,12 @@ describe('game session', () => {
       name: 'Door Gate Test',
       world: { width: 320, height: 240 },
       spawn: { x: 100, y: 60 },
-      medalTargets: { goldTime: 1000, silverTime: 1500, goldLaunches: 1, silverLaunches: 2 },
+      medalTargets: {
+        goldTime: 1000,
+        silverTime: 1500,
+        goldJumps: 1,
+        silverJumps: 2
+      },
       starsTotal: 1,
       platforms: [],
       walls: [],
@@ -172,18 +179,18 @@ describe('game session', () => {
       levelIndex: 0,
       level,
       status: 'playing',
-      launches: 0,
+      jumps: 0,
       elapsedMs: 0,
       collectedStars: 0,
       blob: {
         ...createBlobState({ x: 108, y: 56 }),
         skinId: 'peach',
-        canLaunch: true
+        canJump: true
       },
       runtime,
       result: null,
       lastFrameEvents: {
-        launched: false,
+        jumped: false,
         pickedAbility: null,
         collectedStars: [],
         enteredDoor: false,

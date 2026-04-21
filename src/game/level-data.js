@@ -1,7 +1,15 @@
-const WORLD = { width: 960, height: 540 };
+const WORLD_HEIGHT = 540;
+
+function world(width) {
+  return { width, height: WORLD_HEIGHT };
+}
 
 function platform(x, y, width, height = 18, type = 'platform', id = null) {
   return { id, x, y, width, height, type };
+}
+
+function ground(width) {
+  return platform(0, 460, width, 40, 'ground');
 }
 
 function wall(x, y, width, height, type = 'wall', id = null) {
@@ -79,6 +87,10 @@ function door(id, x, y, requiresButton = null) {
   };
 }
 
+function floorDoor(id, x, floorY, requiresButton = null) {
+  return door(id, x, floorY - 84, requiresButton);
+}
+
 function fragileFloor(id, x, y, width, height = 18) {
   return {
     id,
@@ -152,13 +164,21 @@ export const SKINS = [
 const RAW_LEVELS = [
   {
     id: '1-1',
-    name: 'First Bounce',
-    starsTotal: 1,
-    medalTargets: { goldTime: 7000, silverTime: 12000, goldLaunches: 2, silverLaunches: 4 },
-    world: WORLD,
+    name: 'Warm-Up Run',
+    starsTotal: 3,
+    medalTargets: { goldTime: 22000, silverTime: 34000, goldJumps: 10, silverJumps: 18 },
+    world: world(2240),
     spawn: { x: 140, y: 408 },
-    door: door('door-1-1', 770, 348),
-    platforms: [platform(60, 460, 840, 40, 'ground'), platform(330, 392, 110, 20, 'ledge')],
+    door: floorDoor('door-1-1', 2100, 460),
+    platforms: [
+      ground(2240),
+      platform(320, 398, 140, 18, 'step'),
+      platform(590, 348, 160, 18, 'step'),
+      platform(920, 392, 180, 18, 'step'),
+      platform(1260, 330, 180, 18, 'step'),
+      platform(1640, 392, 180, 18, 'step'),
+      platform(1980, 460, 180, 18, 'goal-floor')
+    ],
     walls: [],
     springs: [],
     fans: [],
@@ -166,20 +186,25 @@ const RAW_LEVELS = [
     fragileFloors: [],
     movingPlatforms: [],
     pickups: [],
-    stars: [star('s1', 410, 340)]
+    stars: [star('s1', 420, 350), star('s2', 1360, 282), star('s3', 1850, 352)]
   },
   {
     id: '1-2',
-    name: 'Doorstep Hop',
-    starsTotal: 2,
-    medalTargets: { goldTime: 9000, silverTime: 15000, goldLaunches: 3, silverLaunches: 5 },
-    world: WORLD,
-    spawn: { x: 150, y: 408 },
-    door: door('door-1-2', 760, 280),
+    name: 'Three Lanes',
+    starsTotal: 3,
+    medalTargets: { goldTime: 24000, silverTime: 36000, goldJumps: 12, silverJumps: 20 },
+    world: world(2320),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-1-2', 2170, 392),
     platforms: [
-      platform(60, 460, 840, 40, 'ground'),
-      platform(500, 380, 120, 18, 'step'),
-      platform(700, 310, 120, 18, 'step')
+      ground(2320),
+      platform(300, 390, 150, 18, 'step'),
+      platform(560, 318, 160, 18, 'step'),
+      platform(820, 390, 170, 18, 'step'),
+      platform(1140, 300, 170, 18, 'step'),
+      platform(1480, 390, 170, 18, 'step'),
+      platform(1840, 324, 160, 18, 'step'),
+      platform(2120, 392, 130, 18, 'goal-floor')
     ],
     walls: [],
     springs: [],
@@ -188,200 +213,488 @@ const RAW_LEVELS = [
     fragileFloors: [],
     movingPlatforms: [],
     pickups: [],
-    stars: [star('s1', 540, 330), star('s2', 720, 248)]
+    stars: [star('s1', 640, 270), star('s2', 1215, 252), star('s3', 1890, 276)]
   },
   {
     id: '1-3',
-    name: 'Tiny Tunnel',
-    starsTotal: 2,
-    medalTargets: { goldTime: 11000, silverTime: 18000, goldLaunches: 4, silverLaunches: 6 },
-    world: WORLD,
-    spawn: { x: 150, y: 408 },
-    door: door('door-1-3', 770, 348),
-    platforms: [platform(60, 460, 840, 40, 'ground'), platform(420, 332, 260, 18, 'tunnel-roof')],
-    walls: [
-      wall(420, 400, 30, 60, 'tunnel-wall'),
-      wall(650, 350, 30, 110, 'tunnel-wall')
+    name: 'Spring Intro',
+    starsTotal: 3,
+    medalTargets: { goldTime: 23000, silverTime: 35000, goldJumps: 12, silverJumps: 22 },
+    world: world(2280),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-1-3', 2100, 340),
+    platforms: [
+      ground(2280),
+      platform(620, 420, 160, 18, 'spring-ledge'),
+      platform(980, 308, 170, 18, 'step'),
+      platform(1380, 370, 180, 18, 'step'),
+      platform(1740, 300, 180, 18, 'step'),
+      platform(2040, 340, 150, 18, 'goal-floor')
     ],
-    springs: [],
+    walls: [],
+    springs: [spring(660, 438, 92, 22, 1.75, 'spring-1-3')],
     fans: [],
     buttons: [],
     fragileFloors: [],
     movingPlatforms: [],
     pickups: [],
-    stars: [star('s1', 535, 385), star('s2', 700, 318)]
+    stars: [star('s1', 710, 360), star('s2', 1070, 260), star('s3', 1820, 252)]
   },
   {
     id: '1-4',
-    name: 'Star Steps',
+    name: 'Button Jog',
     starsTotal: 3,
-    medalTargets: { goldTime: 14000, silverTime: 22000, goldLaunches: 4, silverLaunches: 7 },
-    world: WORLD,
-    spawn: { x: 130, y: 408 },
-    door: door('door-1-4', 810, 348),
+    medalTargets: { goldTime: 26000, silverTime: 38000, goldJumps: 14, silverJumps: 24 },
+    world: world(2400),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-1-4', 2230, 392, 'b-1-4'),
     platforms: [
-      platform(60, 460, 840, 40, 'ground'),
-      platform(290, 360, 90, 18, 'step'),
-      platform(470, 315, 90, 18, 'step'),
-      platform(650, 270, 90, 18, 'step')
+      ground(2400),
+      platform(500, 390, 160, 18, 'button-ledge'),
+      platform(930, 330, 190, 18, 'step'),
+      platform(1320, 390, 190, 18, 'step'),
+      platform(1730, 314, 180, 18, 'step'),
+      platform(2180, 392, 160, 18, 'goal-floor')
     ],
     walls: [],
     springs: [],
+    fans: [],
+    buttons: [button('b-1-4', 540, 372)],
+    fragileFloors: [],
+    movingPlatforms: [],
+    pickups: [],
+    stars: [star('s1', 610, 342), star('s2', 1410, 342), star('s3', 1810, 264)]
+  },
+  {
+    id: '1-5',
+    name: 'First Long Push',
+    starsTotal: 3,
+    medalTargets: { goldTime: 28000, silverTime: 42000, goldJumps: 15, silverJumps: 26 },
+    world: world(2520),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-1-5', 2330, 460),
+    platforms: [
+      ground(2520),
+      platform(360, 394, 140, 18, 'step'),
+      platform(760, 342, 180, 18, 'step'),
+      platform(1180, 394, 180, 18, 'step'),
+      platform(1610, 326, 180, 18, 'step'),
+      platform(2010, 394, 180, 18, 'step'),
+      platform(2280, 460, 190, 18, 'goal-floor')
+    ],
+    walls: [],
+    springs: [spring(1040, 438, 90, 22, 1.88, 'spring-1-5')],
     fans: [],
     buttons: [],
     fragileFloors: [],
     movingPlatforms: [],
     pickups: [],
-    stars: [star('s1', 250, 320), star('s2', 515, 270), star('s3', 700, 225)]
+    stars: [star('s1', 450, 346), star('s2', 1085, 288), star('s3', 2080, 344)]
   },
   {
     id: '2-1',
-    name: 'Button Door',
-    starsTotal: 2,
-    medalTargets: { goldTime: 12000, silverTime: 19000, goldLaunches: 4, silverLaunches: 7 },
-    world: WORLD,
-    spawn: { x: 130, y: 408 },
-    door: door('door-2-1', 790, 348, 'b1'),
+    name: 'Twin Springs',
+    starsTotal: 3,
+    medalTargets: { goldTime: 30000, silverTime: 44000, goldJumps: 16, silverJumps: 28 },
+    world: world(2600),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-2-1', 2400, 350),
     platforms: [
-      platform(60, 460, 840, 40, 'ground'),
-      platform(300, 420, 110, 18, 'button-ledge'),
-      platform(640, 360, 120, 18, 'goal-ledge')
+      ground(2600),
+      platform(520, 410, 150, 18, 'spring-ledge'),
+      platform(960, 334, 170, 18, 'step'),
+      platform(1350, 410, 170, 18, 'spring-ledge'),
+      platform(1820, 320, 180, 18, 'step'),
+      platform(2340, 350, 180, 18, 'goal-floor')
     ],
     walls: [],
-    springs: [],
+    springs: [
+      spring(560, 438, 90, 22, 1.95, 'spring-2-1-a'),
+      spring(1390, 438, 90, 22, 2.02, 'spring-2-1-b')
+    ],
     fans: [],
-    buttons: [button('b1', 320, 402)],
+    buttons: [],
     fragileFloors: [],
     movingPlatforms: [],
     pickups: [],
-    stars: [star('s1', 365, 360), star('s2', 680, 310)]
+    stars: [star('s1', 610, 356), star('s2', 1450, 356), star('s3', 1900, 270)]
   },
   {
     id: '2-2',
     name: 'Spring Pen',
-    starsTotal: 2,
-    medalTargets: { goldTime: 11000, silverTime: 17000, goldLaunches: 3, silverLaunches: 6 },
-    world: WORLD,
-    spawn: { x: 130, y: 408 },
-    door: door('door-2-2', 780, 218),
-    platforms: [platform(60, 460, 840, 40, 'ground'), platform(600, 250, 160, 18, 'goal-ledge')],
+    starsTotal: 3,
+    medalTargets: { goldTime: 29000, silverTime: 43000, goldJumps: 15, silverJumps: 26 },
+    world: world(2320),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-2-2', 2140, 280),
+    platforms: [
+      ground(2320),
+      platform(520, 410, 180, 18, 'runway'),
+      platform(930, 312, 190, 18, 'landing'),
+      platform(1380, 220, 180, 18, 'upper'),
+      platform(1840, 280, 220, 18, 'goal-floor'),
+      platform(2080, 280, 120, 18, 'goal-floor')
+    ],
     walls: [],
-    springs: [spring(310, 438, 90, 22, 1.97, 'spring-2-2')],
+    springs: [spring(610, 438, 100, 22, 2.35, 'spring-2-2')],
     fans: [],
     buttons: [],
     fragileFloors: [],
     movingPlatforms: [],
     pickups: [],
-    stars: [star('s1', 350, 330), star('s2', 650, 190)]
+    stars: [star('s1', 680, 362), star('s2', 1460, 170), star('s3', 1910, 230)]
   },
   {
     id: '2-3',
-    name: 'Fan Page',
+    name: 'Fan Ribbon',
     starsTotal: 3,
-    medalTargets: { goldTime: 14000, silverTime: 21000, goldLaunches: 4, silverLaunches: 7 },
-    world: WORLD,
-    spawn: { x: 120, y: 408 },
-    door: door('door-2-3', 805, 210),
+    medalTargets: { goldTime: 32000, silverTime: 47000, goldJumps: 17, silverJumps: 30 },
+    world: world(2700),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-2-3', 2500, 298),
     platforms: [
-      platform(60, 460, 840, 40, 'ground'),
-      platform(420, 390, 120, 18, 'bridge'),
-      platform(700, 240, 130, 18, 'goal-ledge')
+      ground(2700),
+      platform(460, 394, 180, 18, 'step'),
+      platform(920, 350, 180, 18, 'step'),
+      platform(1480, 394, 180, 18, 'step'),
+      platform(1960, 320, 180, 18, 'step'),
+      platform(2440, 298, 180, 18, 'goal-floor')
     ],
     walls: [],
-    springs: [spring(250, 438, 88, 22, 1.35, 'spring-2-3')],
-    fans: [fan(470, 230, 110, 210, 620, 'fan-2-3')],
+    springs: [spring(1110, 438, 90, 22, 1.92, 'spring-2-3')],
+    fans: [fan(1700, 210, 120, 210, 640, 'fan-2-3')],
     buttons: [],
     fragileFloors: [],
-    movingPlatforms: [movingPlatform(560, 330, 90, 16, 55, 'x', 1.6, 'moving-2-3')],
+    movingPlatforms: [],
     pickups: [],
-    stars: [star('s1', 280, 300), star('s2', 515, 205), star('s3', 735, 180)]
+    stars: [star('s1', 560, 346), star('s2', 1180, 362), star('s3', 2030, 264)]
   },
   {
+    id: '2-4',
+    name: 'Door Relay',
+    starsTotal: 3,
+    medalTargets: { goldTime: 33000, silverTime: 48000, goldJumps: 18, silverJumps: 30 },
+    world: world(2820),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-2-4', 2590, 352, 'b-2-4'),
+    platforms: [
+      ground(2820),
+      platform(540, 388, 190, 18, 'button-ledge'),
+      platform(970, 312, 180, 18, 'step'),
+      platform(1460, 388, 180, 18, 'step'),
+      platform(1940, 322, 180, 18, 'step'),
+      platform(2530, 352, 200, 18, 'goal-floor')
+    ],
+    walls: [],
+    springs: [],
+    fans: [],
+    buttons: [button('b-2-4', 600, 370)],
+    fragileFloors: [],
+    movingPlatforms: [],
+    pickups: [],
+    stars: [star('s1', 670, 340), star('s2', 1550, 340), star('s3', 2000, 272)]
+  },
+  {
+    id: '2-5',
+    name: 'Chapter Stretch',
+    starsTotal: 3,
+    medalTargets: { goldTime: 36000, silverTime: 52000, goldJumps: 19, silverJumps: 33 },
+    world: world(2960),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-2-5', 2740, 300),
+    platforms: [
+      ground(2960),
+      platform(400, 390, 180, 18, 'step'),
+      platform(820, 330, 200, 18, 'step'),
+      platform(1320, 390, 180, 18, 'step'),
+      platform(1780, 316, 180, 18, 'step'),
+      platform(2200, 390, 180, 18, 'step'),
+      platform(2680, 300, 180, 18, 'goal-floor')
+    ],
+    walls: [],
+    springs: [spring(1040, 438, 90, 22, 2.08, 'spring-2-5')],
+    fans: [],
+    buttons: [],
+    fragileFloors: [],
+    movingPlatforms: [],
+    pickups: [],
+    stars: [star('s1', 500, 344), star('s2', 1100, 274), star('s3', 2260, 344)]
+  }
+];
+
+RAW_LEVELS.push(
+  {
     id: '3-1',
-    name: 'Blue Grip',
-    starsTotal: 2,
-    medalTargets: { goldTime: 14000, silverTime: 22000, goldLaunches: 4, silverLaunches: 7 },
-    world: WORLD,
-    spawn: { x: 130, y: 408 },
-    door: door('door-3-1', 800, 220),
-    platforms: [platform(60, 460, 840, 40, 'ground'), platform(700, 250, 120, 18, 'goal-ledge')],
-    walls: [wall(560, 210, 26, 180, 'sticky-wall')],
+    name: 'Sticky Reach',
+    starsTotal: 3,
+    medalTargets: { goldTime: 34000, silverTime: 50000, goldJumps: 18, silverJumps: 31 },
+    world: world(3000),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-3-1', 2780, 332),
+    platforms: [
+      ground(3000),
+      platform(560, 390, 180, 18, 'step'),
+      platform(1080, 330, 180, 18, 'step'),
+      platform(1640, 390, 180, 18, 'step'),
+      platform(2200, 322, 180, 18, 'step'),
+      platform(2720, 332, 180, 18, 'goal-floor')
+    ],
+    walls: [wall(1320, 180, 24, 210, 'sticky-wall')],
     springs: [],
     fans: [],
     buttons: [],
     fragileFloors: [],
     movingPlatforms: [],
-    pickups: [pickup('p-blue', 'sticky', 280, 370)],
-    stars: [star('s1', 330, 320), star('s2', 610, 230)]
+    pickups: [pickup('p-3-1', 'sticky', 930, 360)],
+    stars: [star('s1', 620, 344), star('s2', 1390, 230), star('s3', 2260, 274)]
   },
   {
     id: '3-2',
-    name: 'Heavy Drop',
+    name: 'Heavy Footing',
     starsTotal: 3,
-    medalTargets: { goldTime: 16000, silverTime: 24000, goldLaunches: 5, silverLaunches: 8 },
-    world: WORLD,
-    spawn: { x: 130, y: 408 },
-    door: door('door-3-2', 790, 310, 'b-heavy'),
+    medalTargets: { goldTime: 36000, silverTime: 52000, goldJumps: 19, silverJumps: 33 },
+    world: world(3040),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-3-2', 2820, 340, 'b-3-2'),
     platforms: [
-      platform(60, 460, 840, 40, 'ground'),
-      platform(280, 402, 130, 16, 'fragile-floor', 'floor-3-2'),
-      platform(650, 340, 140, 18, 'goal-ledge')
+      ground(3040),
+      platform(520, 390, 180, 18, 'fragile-floor', 'floor-3-2-a'),
+      platform(980, 330, 180, 18, 'step'),
+      platform(1520, 390, 180, 18, 'fragile-floor', 'floor-3-2-b'),
+      platform(2140, 320, 200, 18, 'step'),
+      platform(2760, 340, 180, 18, 'goal-floor')
     ],
     walls: [],
     springs: [],
     fans: [],
-    buttons: [button('b-heavy', 690, 322)],
-    fragileFloors: [fragileFloor('floor-3-2', 280, 402, 130, 16)],
+    buttons: [button('b-3-2', 2190, 302)],
+    fragileFloors: [
+      fragileFloor('floor-3-2-a', 520, 390, 180, 18),
+      fragileFloor('floor-3-2-b', 1520, 390, 180, 18)
+    ],
     movingPlatforms: [],
-    pickups: [pickup('p-green', 'heavy', 220, 372)],
-    stars: [star('s1', 240, 330), star('s2', 520, 385), star('s3', 720, 290)]
+    pickups: [pickup('p-3-2', 'heavy', 860, 360)],
+    stars: [star('s1', 610, 340), star('s2', 1600, 340), star('s3', 2230, 272)]
   },
   {
     id: '3-3',
-    name: 'Elastic Pop',
+    name: 'Elastic Ladder',
     starsTotal: 3,
-    medalTargets: { goldTime: 16000, silverTime: 25000, goldLaunches: 5, silverLaunches: 8 },
-    world: WORLD,
-    spawn: { x: 130, y: 408 },
-    door: door('door-3-3', 800, 170),
+    medalTargets: { goldTime: 38000, silverTime: 54000, goldJumps: 20, silverJumps: 35 },
+    world: world(3080),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-3-3', 2860, 280),
     platforms: [
-      platform(60, 460, 840, 40, 'ground'),
-      platform(430, 335, 120, 18, 'mid-ledge'),
-      platform(690, 190, 140, 18, 'goal-ledge')
+      ground(3080),
+      platform(480, 394, 180, 18, 'step'),
+      platform(980, 320, 180, 18, 'step'),
+      platform(1540, 250, 180, 18, 'step'),
+      platform(2140, 320, 180, 18, 'step'),
+      platform(2800, 280, 180, 18, 'goal-floor')
     ],
     walls: [],
-    springs: [spring(430, 438, 90, 22, 1.2, 'spring-3-3')],
+    springs: [
+      spring(700, 438, 90, 22, 2.1, 'spring-3-3-a'),
+      spring(1760, 438, 90, 22, 2.18, 'spring-3-3-b')
+    ],
     fans: [],
     buttons: [],
     fragileFloors: [],
     movingPlatforms: [],
-    pickups: [pickup('p-red', 'elastic', 305, 372)],
-    stars: [star('s1', 330, 280), star('s2', 505, 290), star('s3', 730, 140)]
+    pickups: [pickup('p-3-3', 'elastic', 900, 360)],
+    stars: [star('s1', 760, 346), star('s2', 1620, 202), star('s3', 2220, 272)]
   },
   {
     id: '3-4',
-    name: 'Final Scribble',
+    name: 'Crosswind Walk',
     starsTotal: 3,
-    medalTargets: { goldTime: 20000, silverTime: 30000, goldLaunches: 6, silverLaunches: 10 },
-    world: WORLD,
-    spawn: { x: 120, y: 408 },
-    door: door('door-3-4', 816, 160, 'b-final'),
+    medalTargets: { goldTime: 40000, silverTime: 56000, goldJumps: 21, silverJumps: 36 },
+    world: world(3160),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-3-4', 2920, 300),
     platforms: [
-      platform(60, 460, 840, 40, 'ground'),
-      platform(220, 374, 90, 18, 'ramp'),
-      platform(430, 320, 120, 18, 'fragile-floor', 'floor-3-4'),
-      platform(650, 250, 140, 18, 'goal-ledge')
+      ground(3160),
+      platform(520, 390, 180, 18, 'step'),
+      platform(1080, 338, 180, 18, 'step'),
+      platform(1640, 390, 180, 18, 'step'),
+      platform(2260, 328, 190, 18, 'step'),
+      platform(2860, 300, 180, 18, 'goal-floor')
     ],
-    walls: [wall(350, 250, 24, 160, 'sticky-wall')],
-    springs: [spring(220, 438, 88, 22, 1.28, 'spring-3-4')],
-    fans: [fan(540, 210, 90, 180, 550, 'fan-3-4')],
-    buttons: [button('b-final', 690, 232)],
-    fragileFloors: [fragileFloor('floor-3-4', 430, 320, 120, 18)],
-    movingPlatforms: [movingPlatform(560, 270, 80, 16, 48, 'y', 1.4, 'moving-3-4')],
-    pickups: [pickup('p-blue-final', 'sticky', 260, 340), pickup('p-red-final', 'elastic', 585, 190)],
-    stars: [star('s1', 190, 330), star('s2', 480, 270), star('s3', 742, 126)]
+    walls: [],
+    springs: [],
+    fans: [
+      fan(1320, 230, 120, 210, 620, 'fan-3-4-a'),
+      fan(2480, 210, 120, 220, 700, 'fan-3-4-b')
+    ],
+    buttons: [],
+    fragileFloors: [],
+    movingPlatforms: [],
+    pickups: [],
+    stars: [star('s1', 610, 344), star('s2', 1700, 344), star('s3', 2350, 278)]
+  },
+  {
+    id: '3-5',
+    name: 'Moving Margin',
+    starsTotal: 3,
+    medalTargets: { goldTime: 42000, silverTime: 60000, goldJumps: 22, silverJumps: 38 },
+    world: world(3200),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-3-5', 2960, 310),
+    platforms: [
+      ground(3200),
+      platform(560, 390, 170, 18, 'step'),
+      platform(1260, 310, 160, 18, 'landing'),
+      platform(1860, 390, 180, 18, 'step'),
+      platform(2900, 310, 180, 18, 'goal-floor')
+    ],
+    walls: [],
+    springs: [],
+    fans: [],
+    buttons: [],
+    fragileFloors: [],
+    movingPlatforms: [
+      movingPlatform(900, 350, 120, 18, 180, 'x', 1.5, 'moving-3-5-a'),
+      movingPlatform(2300, 300, 120, 18, 140, 'y', 1.3, 'moving-3-5-b')
+    ],
+    pickups: [],
+    stars: [star('s1', 960, 300), star('s2', 1920, 344), star('s3', 2360, 246)]
+  },
+  {
+    id: '4-1',
+    name: 'Final Chapter Run',
+    starsTotal: 3,
+    medalTargets: { goldTime: 43000, silverTime: 62000, goldJumps: 22, silverJumps: 39 },
+    world: world(3240),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-4-1', 3000, 300),
+    platforms: [
+      ground(3240),
+      platform(540, 390, 180, 18, 'step'),
+      platform(1040, 322, 180, 18, 'step'),
+      platform(1580, 390, 180, 18, 'step'),
+      platform(2140, 314, 180, 18, 'step'),
+      platform(2940, 300, 180, 18, 'goal-floor')
+    ],
+    walls: [],
+    springs: [spring(1280, 438, 90, 22, 2.15, 'spring-4-1')],
+    fans: [],
+    buttons: [],
+    fragileFloors: [],
+    movingPlatforms: [],
+    pickups: [],
+    stars: [star('s1', 640, 344), star('s2', 1340, 272), star('s3', 2190, 264)]
+  },
+  {
+    id: '4-2',
+    name: 'Mixed Signals',
+    starsTotal: 3,
+    medalTargets: { goldTime: 45000, silverTime: 64000, goldJumps: 23, silverJumps: 40 },
+    world: world(3300),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-4-2', 3060, 280, 'b-4-2'),
+    platforms: [
+      ground(3300),
+      platform(560, 390, 180, 18, 'step'),
+      platform(1180, 312, 180, 18, 'step'),
+      platform(1820, 390, 180, 18, 'fragile-floor', 'floor-4-2'),
+      platform(2420, 320, 180, 18, 'step'),
+      platform(3000, 280, 180, 18, 'goal-floor')
+    ],
+    walls: [wall(1500, 180, 24, 210, 'sticky-wall')],
+    springs: [spring(820, 438, 90, 22, 2.08, 'spring-4-2')],
+    fans: [fan(2100, 210, 110, 210, 660, 'fan-4-2')],
+    buttons: [button('b-4-2', 2460, 302)],
+    fragileFloors: [fragileFloor('floor-4-2', 1820, 390, 180, 18)],
+    movingPlatforms: [],
+    pickups: [pickup('p-4-2', 'sticky', 1360, 360)],
+    stars: [star('s1', 910, 352), star('s2', 1540, 228), star('s3', 2140, 274)]
+  },
+  {
+    id: '4-3',
+    name: 'Elastic Conveyor',
+    starsTotal: 3,
+    medalTargets: { goldTime: 47000, silverTime: 66000, goldJumps: 24, silverJumps: 42 },
+    world: world(3360),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-4-3', 3120, 300),
+    platforms: [
+      ground(3360),
+      platform(620, 390, 180, 18, 'step'),
+      platform(1180, 320, 180, 18, 'step'),
+      platform(1740, 390, 180, 18, 'step'),
+      platform(2380, 300, 180, 18, 'step'),
+      platform(3060, 300, 180, 18, 'goal-floor')
+    ],
+    walls: [],
+    springs: [
+      spring(880, 438, 90, 22, 2.18, 'spring-4-3-a'),
+      spring(2040, 438, 90, 22, 2.24, 'spring-4-3-b')
+    ],
+    fans: [],
+    buttons: [],
+    fragileFloors: [],
+    movingPlatforms: [movingPlatform(1440, 350, 120, 18, 160, 'x', 1.7, 'moving-4-3')],
+    pickups: [pickup('p-4-3', 'elastic', 760, 360)],
+    stars: [star('s1', 960, 280), star('s2', 1520, 300), star('s3', 2440, 252)]
+  },
+  {
+    id: '4-4',
+    name: 'Pressure Route',
+    starsTotal: 3,
+    medalTargets: { goldTime: 50000, silverTime: 70000, goldJumps: 25, silverJumps: 44 },
+    world: world(3440),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-4-4', 3200, 292),
+    platforms: [
+      ground(3440),
+      platform(560, 390, 180, 18, 'fragile-floor', 'floor-4-4-a'),
+      platform(1220, 320, 180, 18, 'step'),
+      platform(1860, 390, 180, 18, 'fragile-floor', 'floor-4-4-b'),
+      platform(2500, 322, 180, 18, 'step'),
+      platform(3140, 292, 180, 18, 'goal-floor')
+    ],
+    walls: [],
+    springs: [],
+    fans: [fan(2040, 220, 120, 210, 700, 'fan-4-4')],
+    buttons: [],
+    fragileFloors: [
+      fragileFloor('floor-4-4-a', 560, 390, 180, 18),
+      fragileFloor('floor-4-4-b', 1860, 390, 180, 18)
+    ],
+    movingPlatforms: [],
+    pickups: [pickup('p-4-4', 'heavy', 980, 360)],
+    stars: [star('s1', 640, 338), star('s2', 1930, 338), star('s3', 2570, 274)]
+  },
+  {
+    id: '4-5',
+    name: 'Door Into Night',
+    starsTotal: 3,
+    medalTargets: { goldTime: 52000, silverTime: 74000, goldJumps: 26, silverJumps: 46 },
+    world: world(3520),
+    spawn: { x: 140, y: 408 },
+    door: floorDoor('door-4-5', 3280, 260, 'b-4-5'),
+    platforms: [
+      ground(3520),
+      platform(560, 390, 180, 18, 'step'),
+      platform(1160, 320, 180, 18, 'step'),
+      platform(1760, 390, 180, 18, 'step'),
+      platform(2380, 310, 180, 18, 'step'),
+      platform(3000, 260, 180, 18, 'goal-floor'),
+      platform(3240, 260, 120, 18, 'goal-floor')
+    ],
+    walls: [wall(1490, 170, 24, 220, 'sticky-wall')],
+    springs: [spring(860, 438, 90, 22, 2.22, 'spring-4-5')],
+    fans: [fan(2100, 200, 120, 220, 720, 'fan-4-5')],
+    buttons: [button('b-4-5', 3050, 242)],
+    fragileFloors: [fragileFloor('floor-4-5', 1760, 390, 180, 18)],
+    movingPlatforms: [movingPlatform(2640, 320, 120, 18, 170, 'x', 1.6, 'moving-4-5')],
+    pickups: [
+      pickup('p-4-5-a', 'sticky', 1360, 360),
+      pickup('p-4-5-b', 'elastic', 2240, 272)
+    ],
+    stars: [star('s1', 920, 344), star('s2', 1510, 220), star('s3', 2690, 260)]
   }
-];
+);
 
 function normalizeButtons(level, doorList) {
   return (level.buttons ?? []).map((entry, index) => {

@@ -1,37 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import {
-  clampDragVector,
-  createBlobState,
-  getBlobVisualState,
-  getLaunchVelocity
-} from '../src/game/blob.js';
+import * as blobHelpers from '../src/game/blob.js';
 
 describe('blob helpers', () => {
-  it('clamps drag vectors to the requested max distance', () => {
-    expect(clampDragVector({ x: 240, y: 0 }, 120)).toEqual({
-      x: 120,
-      y: 0
-    });
+  it('accelerates harder on the ground than in the air', () => {
+    expect(blobHelpers.MOVEMENT?.maxRunSpeed).toBeTypeOf('number');
+    expect(blobHelpers.applyHorizontalControl).toBeTypeOf('function');
+
+    const grounded = blobHelpers.applyHorizontalControl(
+      {
+        ...blobHelpers.createBlobState({ x: 0, y: 0 }),
+        grounded: true,
+        velocity: { x: 0, y: 0 }
+      },
+      1,
+      1 / 60
+    );
+    const airborne = blobHelpers.applyHorizontalControl(
+      {
+        ...blobHelpers.createBlobState({ x: 0, y: 0 }),
+        grounded: false,
+        velocity: { x: 0, y: 0 }
+      },
+      1,
+      1 / 60
+    );
+
+    expect(grounded.velocity.x).toBeGreaterThan(airborne.velocity.x);
   });
 
-  it('launches elastic blobs more strongly than heavy blobs', () => {
-    const dragVector = { x: -100, y: 0 };
-    const elastic = getLaunchVelocity(dragVector, 'elastic');
-    const heavy = getLaunchVelocity(dragVector, 'heavy');
+  it('applies an upward jump impulse', () => {
+    expect(blobHelpers.MOVEMENT?.jumpVelocity).toBeTypeOf('number');
+    expect(blobHelpers.applyJumpImpulse).toBeTypeOf('function');
 
-    expect(elastic.x).toBeGreaterThan(heavy.x);
-    expect(elastic.y).toBe(heavy.y);
+    const jumped = blobHelpers.applyJumpImpulse(
+      blobHelpers.createBlobState({ x: 0, y: 0 })
+    );
+
+    expect(jumped.velocity.y).toBe(-blobHelpers.MOVEMENT.jumpVelocity);
+    expect(jumped.grounded).toBe(false);
   });
 
-  it('stretches the blob when it is moving fast', () => {
-    const blob = createBlobState({ x: 100, y: 220 });
-    blob.velocity.x = 500;
+  it('leans the blob art in the direction of travel', () => {
+    const blob = blobHelpers.createBlobState({ x: 100, y: 220 });
+    blob.velocity.x = 260;
 
-    const visual = getBlobVisualState(blob, {
-      charging: false,
-      impact: 0
+    const visual = blobHelpers.getBlobVisualState(blob, {
+      moveX: 1,
+      jumping: false,
+      impact: 0.2
     });
 
-    expect(visual.scaleX).toBeGreaterThan(visual.scaleY);
+    expect(visual.tilt).toBeGreaterThan(0);
   });
 });

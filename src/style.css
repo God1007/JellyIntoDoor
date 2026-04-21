@@ -407,6 +407,54 @@ textarea {
   color: #7a5b1f;
 }
 
+.hud-touch-controls {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  align-self: end;
+  justify-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  pointer-events: none;
+}
+
+.hud-touch-joystick,
+.hud-touch-jump {
+  pointer-events: auto;
+}
+
+.hud-touch-joystick {
+  width: 124px;
+  height: 124px;
+  pointer-events: auto;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: rgba(255, 250, 239, 0.82);
+  position: relative;
+}
+
+.hud-touch-joystick__knob {
+  position: absolute;
+  left: 36px;
+  top: 36px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--sky);
+  border: 3px solid var(--ink);
+}
+
+.hud-touch-jump {
+  min-width: 108px;
+  min-height: 108px;
+  pointer-events: auto;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--peach);
+  font-weight: 800;
+  box-shadow: 0 6px 0 rgba(53, 37, 18, 0.16);
+}
+
 .screen-stats {
   list-style: none;
   display: grid;

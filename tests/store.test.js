@@ -34,7 +34,7 @@ describe('app store', () => {
       screen: 'playing',
       selectedLevel: 2
     };
-    const result = { medal: 'silver', timeMs: 12345, launches: 4 };
+    const result = { medal: 'silver', timeMs: 12345, jumps: 14 };
     const next = reduceAppState(playing, {
       type: 'LEVEL_FINISHED',
       result
