@@ -533,6 +533,18 @@ function handleSessionEvents(previousSession) {
   }
 
   if (
+    frameEvents.blockedDoor &&
+    previousSession.lastFrameEvents?.blockedDoor !== true
+  ) {
+    showOverlayMessage(
+      copy('hud.starsMissing', { count: frameEvents.remainingStars }),
+      'warn',
+      1400
+    );
+    renderUi();
+  }
+
+  if (
     session.status === 'won' &&
     previousSession.status === 'playing'
   ) {
@@ -543,6 +555,7 @@ function handleSessionEvents(previousSession) {
     session.status === 'failed' &&
     previousSession.status === 'playing'
   ) {
+    audio.playFail();
     effects.push(
       createFloatingText(
         copy('effects.fellOff'),
@@ -551,6 +564,7 @@ function handleSessionEvents(previousSession) {
         'bad'
       )
     );
+    showOverlayMessage(copy('hud.failedCenter'), 'bad', 1600);
     renderUi();
   }
 }
