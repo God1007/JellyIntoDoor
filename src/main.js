@@ -13,19 +13,15 @@ import { createAudioManager } from './game/audio.js';
 import { createFloatingText, createImpactBurst, stepEffects } from './game/effects.js';
 import { createGameSession, resetGameSession, stepGameSession } from './game/game.js';
 import {
-  beginJumpTouch,
-  beginJoystick,
   createInputState,
-  endJumpTouch,
-  endJoystick,
   markJumpConsumed,
   setJumpPressed,
-  setKeyboardDirection,
-  updateJoystick
+  setKeyboardDirection
 } from './game/input.js';
 import { LEVELS, SKINS } from './game/level-data.js';
 import { renderFrame } from './game/render/canvas-renderer.js';
 import { createCameraState, updateCamera } from './game/render/camera.js';
+import { bindTouchControls } from './game/touch-controls.js';
 import {
   getUnlockedSkinIds,
   loadProfile,
@@ -432,53 +428,15 @@ uiRoot.addEventListener('click', (event) => {
   }
 });
 
-uiRoot.addEventListener('pointerdown', (event) => {
-  if (appState.screen !== 'playing' || paused) {
-    return;
-  }
-
-  if (event.target.closest('.hud-touch-jump')) {
-    inputState = beginJumpTouch(inputState, event.pointerId);
-    event.target.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
-    return;
-  }
-
-  const stick = event.target.closest('.hud-touch-joystick');
-
-  if (stick) {
-    const rect = stick.getBoundingClientRect();
-    inputState = beginJoystick(inputState, event.pointerId, {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2
-    });
-    inputState = updateJoystick(inputState, {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY
-    });
-    event.target.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
+bindTouchControls({
+  uiRoot,
+  getScreen: () => appState.screen,
+  isPaused: () => paused,
+  getInputState: () => inputState,
+  setInputState: (next) => {
+    inputState = next;
   }
 });
-
-uiRoot.addEventListener('pointermove', (event) => {
-  if (inputState.joystick.pointerId === event.pointerId) {
-    inputState = updateJoystick(inputState, {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY
-    });
-  }
-});
-
-function endTouchInput(event) {
-  inputState = endJoystick(inputState, event.pointerId);
-  inputState = endJumpTouch(inputState, event.pointerId);
-}
-
-uiRoot.addEventListener('pointerup', endTouchInput);
-uiRoot.addEventListener('pointercancel', endTouchInput);
 
 window.addEventListener('keydown', (event) => {
   if (event.key === 'a' || event.key === 'ArrowLeft') {
