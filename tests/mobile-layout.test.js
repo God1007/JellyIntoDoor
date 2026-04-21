@@ -21,4 +21,9 @@ describe('mobile layout stylesheet', () => {
     expect(stylesheet).toContain('align-self: end;');
     expect(stylesheet).toContain('display: none;');
   });
+
+  it('includes landscape-first hooks while keeping portrait playable', () => {
+    expect(stylesheet).toContain('@media (orientation: landscape)');
+    expect(stylesheet).toContain('.orientation-banner');
+  });
 });

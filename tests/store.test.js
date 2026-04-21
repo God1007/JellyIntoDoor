@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { createInitialAppState, reduceAppState } from '../src/app/store.js';
 
 describe('app store', () => {
-  it('starts on the title screen with sound enabled', () => {
+  it('starts on the title screen with sound enabled and english selected', () => {
     expect(createInitialAppState()).toMatchObject({
       screen: 'title',
       selectedLevel: 0,
       soundEnabled: true,
-      skinId: 'peach'
+      skinId: 'peach',
+      language: 'en'
     });
   });
 
@@ -54,5 +55,14 @@ describe('app store', () => {
 
     expect(withSkin.skinId).toBe('mint');
     expect(withMutedSound.soundEnabled).toBe(false);
+  });
+
+  it('updates the active language from menu actions', () => {
+    const next = reduceAppState(createInitialAppState(), {
+      type: 'SET_LANGUAGE',
+      language: 'zh'
+    });
+
+    expect(next.language).toBe('zh');
   });
 });

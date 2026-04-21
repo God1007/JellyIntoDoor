@@ -1,5 +1,14 @@
 import './style.css';
 import { createInitialAppState, reduceAppState } from './app/store.js';
+import {
+  DEFAULT_LANGUAGE,
+  getAbilityLabel,
+  getLanguageOptions,
+  getMedalLabel,
+  getSkinCopy,
+  normalizeLanguage,
+  t
+} from './i18n.js';
 import { createAudioManager } from './game/audio.js';
 import { createFloatingText, createImpactBurst, stepEffects } from './game/effects.js';
 import { createGameSession, resetGameSession, stepGameSession } from './game/game.js';
@@ -30,9 +39,10 @@ const profile = loadProfile();
 let appState = {
   ...createInitialAppState(),
   skinId: profile.selectedSkin,
-  soundEnabled: profile.soundEnabled
+  soundEnabled: profile.soundEnabled,
+  language: normalizeLanguage(profile.language)
 };
-let saveProfileState = { ...profile };
+let saveProfileState = { ...profile, language: appState.language };
 let inputState = createInputState();
 let effects = [];
 let paused = false;
@@ -46,7 +56,7 @@ audio.setEnabled(appState.soundEnabled);
 
 app.innerHTML = `
   <main class="game-root">
-    <canvas class="game-canvas" width="960" height="540" aria-label="涂鸦团子游戏画布"></canvas>
+    <canvas class="game-canvas" width="960" height="540"></canvas>
     <div class="ui-root" aria-live="polite"></div>
   </main>
 `;
@@ -56,12 +66,43 @@ const uiRoot = app.querySelector('.ui-root');
 const ctx = canvas.getContext('2d');
 canvas.style.touchAction = 'none';
 
+function currentLanguage() {
+  return normalizeLanguage(appState.language);
+}
+
+function copy(key, variables = {}) {
+  return t(currentLanguage(), key, variables);
+}
+
+function applyDocumentMeta() {
+  document.documentElement.lang = currentLanguage() === 'zh' ? 'zh-CN' : 'en';
+  document.title = copy('metaTitle');
+  canvas.setAttribute('aria-label', copy('canvasLabel'));
+}
+
+function getOrientationHint() {
+  return copy('common.landscapeRecommended');
+}
+
 function getUnlockedMaxIndex() {
   return Math.min(saveProfileState.unlockedLevelIndex, LEVELS.length - 1);
 }
 
-function getSkinLabel(skinId) {
-  return SKINS.find((skin) => skin.id === skinId)?.label ?? '桃桃团';
+function getSkinPresentation(skinId) {
+  return getSkinCopy(currentLanguage(), skinId);
+}
+
+function getUnlockedSkins() {
+  const unlocked = new Set(getUnlockedSkinIds(saveProfileState, SKINS));
+
+  return SKINS.filter((skin) => unlocked.has(skin.id)).map((skin) => ({
+    id: skin.id,
+    ...getSkinPresentation(skin.id)
+  }));
+}
+
+function getAbilityText(ability) {
+  return getAbilityLabel(currentLanguage(), ability);
 }
 
 function persistProfile(patch = {}) {
@@ -69,12 +110,14 @@ function persistProfile(patch = {}) {
     ...saveProfileState,
     selectedSkin: appState.skinId,
     soundEnabled: appState.soundEnabled,
+    language: currentLanguage(),
     ...patch
   });
 }
 
 function dispatch(action) {
   appState = reduceAppState(appState, action);
+  applyDocumentMeta();
   renderUi();
 }
 
@@ -132,12 +175,30 @@ function finishLevel() {
 }
 
 function updateSkin(nextSkinId) {
+  const unlockedIds = new Set(getUnlockedSkinIds(saveProfileState, SKINS));
+
+  if (!unlockedIds.has(nextSkinId)) {
+    return;
+  }
+
   appState = reduceAppState(appState, {
     type: 'SELECT_SKIN',
     skinId: nextSkinId
   });
   persistProfile();
   session.blob.skinId = nextSkinId;
+  renderUi();
+}
+
+function setLanguage(nextLanguage) {
+  const language = normalizeLanguage(nextLanguage);
+
+  appState = reduceAppState(appState, {
+    type: 'SET_LANGUAGE',
+    language
+  });
+  persistProfile({ language });
+  applyDocumentMeta();
   renderUi();
 }
 
@@ -161,24 +222,42 @@ function pointFromEvent(event) {
 }
 
 function renderUi() {
+  const languageOptions = getLanguageOptions();
+  const orientationHint = getOrientationHint();
+
   if (appState.screen === 'title') {
+    const skin = getSkinPresentation(appState.skinId);
+
     renderTitleScreen(uiRoot, {
-      title: '涂鸦团子',
-      subtitle: '冲进门里！',
-      primaryActionLabel: '开始冒险',
-      levelSelectLabel: '选关',
-      skinPickerLabel: '换团子',
-      soundToggleLabel: appState.soundEnabled ? '声音：开' : '声音：关',
+      language: currentLanguage(),
+      languages: languageOptions,
+      languageLabel: copy('common.language'),
+      orientationHint,
+      eyebrow: copy('title.eyebrow'),
+      title: copy('title.heading'),
+      subtitle: copy('title.subtitle'),
+      primaryActionLabel: copy('title.start'),
+      levelSelectLabel: copy('title.levelSelect'),
+      skinPickerLabel: copy('title.skins'),
+      soundToggleLabel: appState.soundEnabled ? copy('title.soundOn') : copy('title.soundOff'),
       soundEnabled: appState.soundEnabled,
-      skinLabel: getSkinLabel(appState.skinId),
-      helpText: '按住团子拖拽，松手发射，钻进快乐小门。'
+      skinLabel: skin.label,
+      skinChipLabel: copy('title.skinChip', { skin: skin.label }),
+      soundChipLabel: appState.soundEnabled ? copy('title.soundChipOn') : copy('title.soundChipOff'),
+      helpText: copy('title.help')
     });
     return;
   }
 
   if (appState.screen === 'level-select') {
     renderLevelSelectScreen(uiRoot, {
-      title: '选关',
+      language: currentLanguage(),
+      languages: languageOptions,
+      languageLabel: copy('common.language'),
+      orientationHint,
+      title: copy('levelSelect.title'),
+      bestLabel: copy('levelSelect.best'),
+      backLabel: copy('common.backToTitle'),
       selectedLevel: appState.selectedLevel,
       levels: LEVELS.map((level, index) => ({
         label: level.id,
@@ -191,44 +270,63 @@ function renderUi() {
   }
 
   if (appState.screen === 'skin-picker') {
-    const unlocked = new Set(getUnlockedSkinIds(saveProfileState, SKINS));
     renderSkinPicker(uiRoot, {
-      title: '团子配色',
+      language: currentLanguage(),
+      languages: languageOptions,
+      languageLabel: copy('common.language'),
+      orientationHint,
+      title: copy('skinPicker.title'),
+      backLabel: copy('common.backToTitle'),
       skinId: appState.skinId,
-      skins: SKINS.filter((skin) => unlocked.has(skin.id)).map((skin) => ({
-        id: skin.id,
-        label: skin.label
-      }))
+      skins: getUnlockedSkins()
     });
     return;
   }
 
   if (appState.screen === 'results') {
+    const result = appState.lastResult ?? {};
+    const medalLabel = getMedalLabel(currentLanguage(), result.medal ?? 'bronze');
+
     renderResultsScreen(uiRoot, {
-      title: '过关啦！',
-      result: appState.lastResult,
-      retryLabel: '再来一遍',
-      nextLabel: '下一关',
-      titleLabel: '回到标题',
+      language: currentLanguage(),
+      languages: languageOptions,
+      languageLabel: copy('common.language'),
+      orientationHint,
+      eyebrow: copy('results.eyebrow'),
+      title: copy('results.title'),
+      medalText: `${copy('common.medal')}: ${medalLabel}`,
+      timeStatLabel: copy('common.time'),
+      launchesStatLabel: copy('common.launches'),
+      starsStatLabel: copy('common.stars'),
+      result,
+      retryLabel: copy('common.retry'),
+      nextLabel: copy('common.nextLevel'),
+      titleLabel: copy('common.backToTitle'),
       showNext: appState.selectedLevel < getUnlockedMaxIndex(),
-      summary: '更快一点、发射更少一点，或者把星星全都捞走。'
+      summary: copy('results.summary')
     });
     return;
   }
 
+  const hudHint = session.status === 'failed'
+    ? copy('hud.failed')
+    : session.blob.ability
+      ? copy('hud.ability', { ability: getAbilityText(session.blob.ability) })
+      : copy('hud.drag');
+
   renderHud(uiRoot, {
-    levelLabel: session.level.id,
-    launches: session.launches,
-    starsCollected: session.runtime.collectedStarIds.length,
+    orientationHint,
+    levelText: copy('hud.level', { level: session.level.id }),
+    launchesText: copy('hud.launches', { count: session.launches }),
+    starsText: copy('hud.stars', { count: session.runtime.collectedStarIds.length }),
     timeMs: session.elapsedMs,
     paused,
-    backLabel: '返回',
-    hint: session.status === 'failed'
-      ? '糊出纸外了，点重试再来一下。'
-      : session.blob.ability
-        ? `当前能力：${session.blob.ability}`
-        : '按住团子拖拽，松手发射。',
-    microcopy: 'Esc 暂停，R 重试。'
+    pauseLabel: copy('hud.pause'),
+    resumeLabel: copy('hud.resume'),
+    retryLabel: copy('common.retry'),
+    backLabel: copy('hud.back'),
+    hint: paused ? copy('hud.paused') : hudHint,
+    microcopy: copy('hud.microcopy')
   });
 }
 
@@ -253,11 +351,11 @@ function renderWorld() {
     effects,
     hint:
       appState.screen === 'title'
-        ? '从纸面弹起，找到通往小门的路。'
+        ? copy('world.title')
         : appState.screen === 'level-select'
-          ? '短关卡，快重试，手感优先。'
+          ? copy('world.levelSelect')
           : appState.screen === 'skin-picker'
-            ? '星星攒得越多，可选的团子越多。'
+            ? copy('world.skinPicker')
             : null,
     status: session.status
   });
@@ -284,6 +382,9 @@ uiRoot.addEventListener('click', (event) => {
       break;
     case 'toggle-sound':
       toggleSound();
+      break;
+    case 'set-language':
+      setLanguage(trigger.dataset.language ?? DEFAULT_LANGUAGE);
       break;
     case 'start-level':
       startLevel(Number(trigger.dataset.levelIndex ?? 0));
@@ -380,7 +481,9 @@ function handleSessionEvents(previousSession) {
     audio.playPickup();
     effects.push(
       createFloatingText(
-        `拿到 ${frameEvents.pickedAbility}`,
+        copy('effects.pickedAbility', {
+          ability: getAbilityText(frameEvents.pickedAbility)
+        }),
         session.blob.position.x,
         session.blob.position.y - 20,
         'good'
@@ -393,7 +496,7 @@ function handleSessionEvents(previousSession) {
       audio.playPickup();
       effects.push(
         createFloatingText(
-          `星星 +1`,
+          copy('effects.star'),
           session.blob.position.x,
           session.blob.position.y - 18 - index * 12,
           'good'
@@ -415,7 +518,7 @@ function handleSessionEvents(previousSession) {
   ) {
     effects.push(
       createFloatingText(
-        '糊出去了',
+        copy('effects.fellOff'),
         session.blob.position.x,
         session.blob.position.y - 24,
         'bad'
@@ -450,6 +553,7 @@ function frame(now) {
   window.requestAnimationFrame(frame);
 }
 
+applyDocumentMeta();
 renderUi();
 renderWorld();
 window.requestAnimationFrame(frame);

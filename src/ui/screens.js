@@ -36,6 +36,46 @@ function listItem(label, value) {
   return `<li class="screen-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></li>`;
 }
 
+function renderLanguageToggle(model = {}) {
+  const languages = model.languages || [];
+
+  if (languages.length === 0) {
+    return '';
+  }
+
+  return `
+    <div class="menu-toolbar">
+      <span class="menu-toolbar__label">${escapeHtml(model.languageLabel || 'Language')}</span>
+      <div class="language-toggle" role="group" aria-label="${escapeHtml(model.languageLabel || 'Language')}">
+        ${languages
+          .map((language) => {
+            const selected = language.id === model.language;
+            return `
+              <button
+                type="button"
+                class="language-toggle__button${selected ? ' is-selected' : ''}"
+                data-action="set-language"
+                data-language="${escapeHtml(language.id)}"
+                aria-pressed="${selected ? 'true' : 'false'}"
+              >
+                ${escapeHtml(language.label)}
+              </button>
+            `;
+          })
+          .join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderOrientationBanner(model = {}) {
+  if (!model.orientationHint) {
+    return '';
+  }
+
+  return `<p class="orientation-banner">${escapeHtml(model.orientationHint)}</p>`;
+}
+
 function renderEmptyState(root, screenName, body) {
   root.dataset.screen = screenName;
   root.innerHTML = body;
@@ -44,19 +84,21 @@ function renderEmptyState(root, screenName, body) {
 export function renderTitleScreen(root, model = {}) {
   const title = model.title || 'Doodle Blob';
   const subtitle = model.subtitle || 'Escape to the Door';
-  const skin = model.skinLabel || model.skinName || model.skinId || 'peach';
-  const soundLabel = model.soundEnabled === false ? 'Sound off' : 'Sound on';
+  const skin = model.skinLabel || model.skinName || model.skinId || 'Peach';
+  const soundLabel = model.soundChipLabel || (model.soundEnabled === false ? 'Sound off' : 'Sound on');
 
   renderEmptyState(
     root,
     'title',
     `
       <section class="screen screen-title">
-        <p class="screen-eyebrow">Paper platformer</p>
+        ${renderLanguageToggle(model)}
+        ${renderOrientationBanner(model)}
+        <p class="screen-eyebrow">${escapeHtml(model.eyebrow || 'Paper platformer')}</p>
         <h1 class="screen-title__heading">${escapeHtml(title)}</h1>
         <p class="screen-title__subtitle">${escapeHtml(subtitle)}</p>
         <div class="screen-chip-row">
-          <span class="screen-chip">Skin: ${escapeHtml(skin)}</span>
+          <span class="screen-chip">${escapeHtml(model.skinChipLabel || `Skin: ${skin}`)}</span>
           <span class="screen-chip">${escapeHtml(soundLabel)}</span>
         </div>
         <div class="screen-actions">
@@ -73,12 +115,15 @@ export function renderTitleScreen(root, model = {}) {
 
 export function renderLevelSelectScreen(root, model = {}) {
   const levels = model.levels || [];
+  const bestLabel = model.bestLabel || 'Best';
 
   renderEmptyState(
     root,
     'level-select',
     `
       <section class="screen screen-level-select">
+        ${renderLanguageToggle(model)}
+        ${renderOrientationBanner(model)}
         <h2 class="screen-section-title">${escapeHtml(model.title || 'Choose a level')}</h2>
         <div class="screen-grid">
           ${levels
@@ -97,14 +142,14 @@ export function renderLevelSelectScreen(root, model = {}) {
                   ${locked ? 'disabled aria-disabled="true"' : ''}
                 >
                   <span class="level-card__label">${escapeHtml(label)}</span>
-                  ${best ? `<span class="level-card__meta">Best ${escapeHtml(best)}</span>` : ''}
+                  ${best ? `<span class="level-card__meta">${escapeHtml(bestLabel)} ${escapeHtml(best)}</span>` : ''}
                 </button>
               `;
             })
             .join('')}
         </div>
         <div class="screen-actions">
-          ${cardButton('Back to title', 'back-to-title', ' data-secondary="true"')}
+          ${cardButton(model.backLabel || 'Back to title', 'back-to-title', ' data-secondary="true"')}
         </div>
       </section>
     `
@@ -123,6 +168,8 @@ export function renderSkinPicker(root, model = {}) {
     'skin-picker',
     `
       <section class="screen screen-skin-picker">
+        ${renderLanguageToggle(model)}
+        ${renderOrientationBanner(model)}
         <h2 class="screen-section-title">${escapeHtml(model.title || 'Pick a skin')}</h2>
         <div class="screen-grid screen-grid--skins">
           ${skins
@@ -138,13 +185,14 @@ export function renderSkinPicker(root, model = {}) {
                 >
                   <span class="skin-card__swatch" aria-hidden="true"></span>
                   <span class="skin-card__label">${escapeHtml(skin.label || skin.name || skin.id)}</span>
+                  ${skin.theme ? `<span class="skin-card__theme">${escapeHtml(skin.theme)}</span>` : ''}
                 </button>
               `;
             })
             .join('')}
         </div>
         <div class="screen-actions">
-          ${cardButton('Back to title', 'back-to-title', ' data-secondary="true"')}
+          ${cardButton(model.backLabel || 'Back to title', 'back-to-title', ' data-secondary="true"')}
         </div>
       </section>
     `
@@ -154,7 +202,7 @@ export function renderSkinPicker(root, model = {}) {
 export function renderHud(root, model = {}) {
   const timeLabel = model.timeLabel || formatTimeMs(model.timeMs);
   const hint = model.hint || (model.paused ? 'Paused' : 'Keep the blob moving.');
-  const pauseLabel = model.paused ? 'Resume' : 'Pause';
+  const pauseLabel = model.paused ? model.resumeLabel || 'Resume' : model.pauseLabel || 'Pause';
   const backLabel = model.backLabel || 'Back to title';
 
   renderEmptyState(
@@ -162,11 +210,12 @@ export function renderHud(root, model = {}) {
     'hud',
     `
       <section class="hud-overlay">
+        ${renderOrientationBanner(model)}
         <div class="hud-overlay__row">
-          ${model.levelLabel ? `<span class="hud-chip">Level ${escapeHtml(model.levelLabel)}</span>` : ''}
-          ${Number.isFinite(model.starsCollected) ? `<span class="hud-chip">Stars ${escapeHtml(model.starsCollected)}</span>` : ''}
-          ${Number.isFinite(model.launches) ? `<span class="hud-chip">Launches ${escapeHtml(model.launches)}</span>` : ''}
-          ${timeLabel ? `<span class="hud-chip">${escapeHtml(timeLabel)}</span>` : ''}
+          ${model.levelText ? `<span class="hud-chip">${escapeHtml(model.levelText)}</span>` : model.levelLabel ? `<span class="hud-chip">Level ${escapeHtml(model.levelLabel)}</span>` : ''}
+          ${model.starsText ? `<span class="hud-chip">${escapeHtml(model.starsText)}</span>` : Number.isFinite(model.starsCollected) ? `<span class="hud-chip">Stars ${escapeHtml(model.starsCollected)}</span>` : ''}
+          ${model.launchesText ? `<span class="hud-chip">${escapeHtml(model.launchesText)}</span>` : Number.isFinite(model.launches) ? `<span class="hud-chip">Launches ${escapeHtml(model.launches)}</span>` : ''}
+          ${model.timeText ? `<span class="hud-chip">${escapeHtml(model.timeText)}</span>` : timeLabel ? `<span class="hud-chip">${escapeHtml(timeLabel)}</span>` : ''}
         </div>
         <p class="hud-overlay__hint">${escapeHtml(hint)}</p>
         <p class="hud-overlay__microcopy">${escapeHtml(model.microcopy || 'Esc to pause. R to retry.')}</p>
@@ -184,20 +233,22 @@ export function renderResultsScreen(root, model = {}) {
   const result = model.result || model;
   const medal = result.medal || 'bronze';
   const timeLabel = result.timeLabel || formatTimeMs(result.timeMs);
-  const summary = result.summary || 'The door opened and the blob made it through.';
+  const summary = result.summary || model.summary || 'The door opened and the blob made it through.';
 
   renderEmptyState(
     root,
     'results',
     `
       <section class="screen screen-results">
-        <p class="screen-eyebrow">Run complete</p>
+        ${renderLanguageToggle(model)}
+        ${renderOrientationBanner(model)}
+        <p class="screen-eyebrow">${escapeHtml(model.eyebrow || 'Run complete')}</p>
         <h2 class="screen-section-title">${escapeHtml(model.title || 'Results')}</h2>
-        <p class="results-medal">Medal: ${escapeHtml(medal)}</p>
+        <p class="results-medal">${escapeHtml(model.medalText || `Medal: ${medal}`)}</p>
         <ul class="screen-stats">
-          ${listItem('Time', timeLabel || '--')}
-          ${listItem('Launches', Number.isFinite(result.launches) ? String(result.launches) : '--')}
-          ${listItem('Stars', Number.isFinite(result.starsCollected) ? String(result.starsCollected) : '--')}
+          ${listItem(model.timeStatLabel || 'Time', timeLabel || '--')}
+          ${listItem(model.launchesStatLabel || 'Launches', Number.isFinite(result.launches) ? String(result.launches) : '--')}
+          ${listItem(model.starsStatLabel || 'Stars', Number.isFinite(result.starsCollected) ? String(result.starsCollected) : '--')}
         </ul>
         <p class="screen-help">${escapeHtml(summary)}</p>
         <div class="screen-actions">

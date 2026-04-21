@@ -4,6 +4,7 @@ export function createInitialAppState() {
     selectedLevel: 0,
     soundEnabled: true,
     skinId: 'peach',
+    language: 'en',
     lastResult: null
   };
 }
@@ -22,6 +23,8 @@ export function reduceAppState(state, action) {
       return { ...state, screen: 'title' };
     case 'SELECT_SKIN':
       return { ...state, skinId: action.skinId };
+    case 'SET_LANGUAGE':
+      return { ...state, language: action.language };
     case 'TOGGLE_SOUND':
       return { ...state, soundEnabled: !state.soundEnabled };
     default:

@@ -39,6 +39,7 @@ function normalizeProfile(profile) {
         : defaults.unlockedLevelIndex,
     selectedSkin:
       typeof profile.selectedSkin === 'string' ? profile.selectedSkin : defaults.selectedSkin,
+    language: profile.language === 'zh' ? 'zh' : defaults.language,
     soundEnabled:
       typeof profile.soundEnabled === 'boolean' ? profile.soundEnabled : defaults.soundEnabled,
     levels: normalizeLevelRecords(profile.levels)
@@ -49,6 +50,7 @@ export function createDefaultProfile() {
   return {
     unlockedLevelIndex: 0,
     selectedSkin: 'peach',
+    language: 'en',
     soundEnabled: true,
     levels: {}
   };

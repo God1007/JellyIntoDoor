@@ -7,10 +7,11 @@ import {
 } from '../src/storage.js';
 
 describe('storage profile', () => {
-  it('starts with the first level unlocked, peach selected, and sound on', () => {
+  it('starts with the first level unlocked, peach selected, english text, and sound on', () => {
     expect(createDefaultProfile()).toMatchObject({
       unlockedLevelIndex: 0,
       selectedSkin: 'peach',
+      language: 'en',
       soundEnabled: true,
       levels: {}
     });
@@ -42,16 +43,28 @@ describe('storage profile', () => {
     });
   });
 
-  it('unlocks skins from total collected stars', () => {
+  it('unlocks the full themed skin lineup from total collected stars', () => {
     const profile = {
       ...createDefaultProfile(),
       levels: {
         0: { starsCollected: 3, medal: 'gold' },
         1: { starsCollected: 3, medal: 'gold' },
-        2: { starsCollected: 2, medal: 'silver' }
+        2: { starsCollected: 3, medal: 'gold' },
+        3: { starsCollected: 3, medal: 'gold' },
+        4: { starsCollected: 3, medal: 'gold' },
+        5: { starsCollected: 3, medal: 'gold' },
+        6: { starsCollected: 3, medal: 'gold' },
+        7: { starsCollected: 3, medal: 'gold' }
       }
     };
 
-    expect(getUnlockedSkinIds(profile, SKINS)).toEqual(['peach', 'mint']);
+    expect(getUnlockedSkinIds(profile, SKINS)).toEqual([
+      'peach',
+      'mint',
+      'sky',
+      'lemon',
+      'cherry',
+      'ink'
+    ]);
   });
 });

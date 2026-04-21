@@ -5,7 +5,12 @@ import {
   paletteForSkin,
   resolveBlobFace
 } from '../src/game/render/doodle.js';
-import { renderHud, renderSkinPicker } from '../src/ui/screens.js';
+import {
+  renderHud,
+  renderResultsScreen,
+  renderSkinPicker,
+  renderTitleScreen
+} from '../src/ui/screens.js';
 
 describe('render helpers', () => {
   it('preserves point count when jittering a doodle outline', () => {
@@ -68,5 +73,41 @@ describe('render helpers', () => {
     });
 
     expect(root.querySelector('[data-action="back-to-title"]')?.textContent).toContain('Back to title');
+  });
+
+  it('renders language toggle buttons on the title screen', () => {
+    const root = document.createElement('section');
+
+    renderTitleScreen(root, {
+      language: 'en',
+      languageLabel: 'Language',
+      languages: [
+        { id: 'en', label: 'English' },
+        { id: 'zh', label: '中文' }
+      ]
+    });
+
+    const languageButtons = root.querySelectorAll('[data-action="set-language"]');
+
+    expect(languageButtons).toHaveLength(2);
+    expect(root.querySelector('[data-language="en"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('[data-language="zh"]')?.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('renders a portrait recommendation banner in results when requested', () => {
+    const root = document.createElement('section');
+
+    renderResultsScreen(root, {
+      language: 'en',
+      result: {
+        medal: 'gold',
+        launches: 2,
+        starsCollected: 3,
+        timeMs: 8000
+      },
+      orientationHint: 'Landscape recommended'
+    });
+
+    expect(root.querySelector('.orientation-banner')?.textContent).toContain('Landscape recommended');
   });
 });

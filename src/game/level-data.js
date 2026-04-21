@@ -72,8 +72,8 @@ function door(id, x, y, requiresButton = null) {
     id,
     x,
     y,
-    width: 84,
-    height: 112,
+    width: 68,
+    height: 92,
     requiresButton,
     open: !requiresButton
   };
@@ -93,15 +93,66 @@ function fragileFloor(id, x, y, width, height = 18) {
 }
 
 export const SKINS = [
-  { id: 'peach', name: '桃桃团', label: '桃桃团', color: '#ffb385', blush: '#ff8b94', unlockStars: 0 },
-  { id: 'mint', name: '薄荷团', label: '薄荷团', color: '#93e4c1', blush: '#5bbf98', unlockStars: 8 },
-  { id: 'sky', name: '云朵团', label: '云朵团', color: '#91c8ff', blush: '#5b96d6', unlockStars: 16 }
+  {
+    id: 'peach',
+    name: 'Peach',
+    label: 'Peach',
+    theme: 'Soft jam',
+    color: '#f8b8a8',
+    blush: '#ff8aa1',
+    unlockStars: 0
+  },
+  {
+    id: 'mint',
+    name: 'Mint',
+    label: 'Mint',
+    theme: 'Cool breeze',
+    color: '#b6f3dc',
+    blush: '#7de0c0',
+    unlockStars: 4
+  },
+  {
+    id: 'sky',
+    name: 'Sky',
+    label: 'Sky',
+    theme: 'Cloud hop',
+    color: '#bfd0ff',
+    blush: '#8eb0ff',
+    unlockStars: 8
+  },
+  {
+    id: 'lemon',
+    name: 'Lemon',
+    label: 'Lemon',
+    theme: 'Sunny pop',
+    color: '#ffe58b',
+    blush: '#ffd24d',
+    unlockStars: 12
+  },
+  {
+    id: 'cherry',
+    name: 'Cherry',
+    label: 'Cherry',
+    theme: 'Candy punch',
+    color: '#ff9aa5',
+    blush: '#e65073',
+    unlockStars: 18
+  },
+  {
+    id: 'ink',
+    name: 'Ink',
+    label: 'Ink',
+    theme: 'Sketch night',
+    color: '#9aa0b9',
+    blush: '#4d4e6a',
+    unlockStars: 24
+  }
 ];
 
 const RAW_LEVELS = [
   {
     id: '1-1',
-    name: '起步涂鸦',
+    name: 'First Bounce',
     starsTotal: 1,
     medalTargets: { goldTime: 7000, silverTime: 12000, goldLaunches: 2, silverLaunches: 4 },
     world: WORLD,
@@ -119,7 +170,7 @@ const RAW_LEVELS = [
   },
   {
     id: '1-2',
-    name: '门前小台阶',
+    name: 'Doorstep Hop',
     starsTotal: 2,
     medalTargets: { goldTime: 9000, silverTime: 15000, goldLaunches: 3, silverLaunches: 5 },
     world: WORLD,
@@ -141,7 +192,7 @@ const RAW_LEVELS = [
   },
   {
     id: '1-3',
-    name: '挤挤小通道',
+    name: 'Tiny Tunnel',
     starsTotal: 2,
     medalTargets: { goldTime: 11000, silverTime: 18000, goldLaunches: 4, silverLaunches: 6 },
     world: WORLD,
@@ -162,7 +213,7 @@ const RAW_LEVELS = [
   },
   {
     id: '1-4',
-    name: '星星顺手拿',
+    name: 'Star Steps',
     starsTotal: 3,
     medalTargets: { goldTime: 14000, silverTime: 22000, goldLaunches: 4, silverLaunches: 7 },
     world: WORLD,
@@ -185,7 +236,7 @@ const RAW_LEVELS = [
   },
   {
     id: '2-1',
-    name: '按钮开门',
+    name: 'Button Door',
     starsTotal: 2,
     medalTargets: { goldTime: 12000, silverTime: 19000, goldLaunches: 4, silverLaunches: 7 },
     world: WORLD,
@@ -207,7 +258,7 @@ const RAW_LEVELS = [
   },
   {
     id: '2-2',
-    name: '弹簧蜡笔',
+    name: 'Spring Pen',
     starsTotal: 2,
     medalTargets: { goldTime: 11000, silverTime: 17000, goldLaunches: 3, silverLaunches: 6 },
     world: WORLD,
@@ -225,7 +276,7 @@ const RAW_LEVELS = [
   },
   {
     id: '2-3',
-    name: '风扇纸页',
+    name: 'Fan Page',
     starsTotal: 3,
     medalTargets: { goldTime: 14000, silverTime: 21000, goldLaunches: 4, silverLaunches: 7 },
     world: WORLD,
@@ -247,7 +298,7 @@ const RAW_LEVELS = [
   },
   {
     id: '3-1',
-    name: '蓝色黏黏',
+    name: 'Blue Grip',
     starsTotal: 2,
     medalTargets: { goldTime: 14000, silverTime: 22000, goldLaunches: 4, silverLaunches: 7 },
     world: WORLD,
@@ -265,7 +316,7 @@ const RAW_LEVELS = [
   },
   {
     id: '3-2',
-    name: '绿色沉沉',
+    name: 'Heavy Drop',
     starsTotal: 3,
     medalTargets: { goldTime: 16000, silverTime: 24000, goldLaunches: 5, silverLaunches: 8 },
     world: WORLD,
@@ -287,7 +338,7 @@ const RAW_LEVELS = [
   },
   {
     id: '3-3',
-    name: '红色弹弹',
+    name: 'Elastic Pop',
     starsTotal: 3,
     medalTargets: { goldTime: 16000, silverTime: 25000, goldLaunches: 5, silverLaunches: 8 },
     world: WORLD,
@@ -309,7 +360,7 @@ const RAW_LEVELS = [
   },
   {
     id: '3-4',
-    name: '毕业关',
+    name: 'Final Scribble',
     starsTotal: 3,
     medalTargets: { goldTime: 20000, silverTime: 30000, goldLaunches: 6, silverLaunches: 10 },
     world: WORLD,

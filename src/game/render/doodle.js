@@ -31,13 +31,21 @@ const PALETTES = {
     shadow: 'rgba(140, 106, 24, 0.18)',
     glow: 'rgba(255, 229, 139, 0.45)'
   },
-  lavender: {
-    fill: '#e0c4ff',
-    outline: '#70508f',
-    highlight: '#faf0ff',
-    blush: '#c89bff',
-    shadow: 'rgba(112, 80, 143, 0.18)',
-    glow: 'rgba(224, 196, 255, 0.45)'
+  cherry: {
+    fill: '#ff9aa5',
+    outline: '#8a314b',
+    highlight: '#ffe1e5',
+    blush: '#e65073',
+    shadow: 'rgba(138, 49, 75, 0.18)',
+    glow: 'rgba(255, 154, 165, 0.45)'
+  },
+  ink: {
+    fill: '#9aa0b9',
+    outline: '#404253',
+    highlight: '#ebeef8',
+    blush: '#4d4e6a',
+    shadow: 'rgba(64, 66, 83, 0.2)',
+    glow: 'rgba(154, 160, 185, 0.4)'
   }
 };
 
