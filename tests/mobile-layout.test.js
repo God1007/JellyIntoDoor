@@ -37,5 +37,7 @@ describe('mobile layout stylesheet', () => {
   it('lets playfield touches pass through the hud shell while keeping settings clickable', () => {
     expect(stylesheet).toMatch(/\.hud-shell\s*\{[^}]*pointer-events:\s*none;/s);
     expect(stylesheet).toMatch(/\.hud-settings-anchor\s*\{[^}]*pointer-events:\s*auto;/s);
+    expect(stylesheet).toMatch(/\.hud-settings-toggle\s*\{[^}]*pointer-events:\s*auto;/s);
+    expect(stylesheet).toMatch(/\.hud-settings-menu\s*\{[^}]*pointer-events:\s*auto;/s);
   });
 });

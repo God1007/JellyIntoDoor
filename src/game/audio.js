@@ -1,8 +1,8 @@
 export const AUDIO_PRESETS = {
-  boing: { startHz: 240, endHz: 320, duration: 0.09, type: 'triangle', gain: 0.055 },
-  pickup: { startHz: 540, endHz: 760, duration: 0.08, type: 'sine', gain: 0.04 },
-  win: { startHz: 420, endHz: 660, duration: 0.18, type: 'triangle', gain: 0.07 },
-  fail: { startHz: 190, endHz: 120, duration: 0.12, type: 'sawtooth', gain: 0.06 }
+  boing: { startHz: 240, endHz: 320, duration: 0.09, type: 'triangle', gain: 0.072 },
+  pickup: { startHz: 540, endHz: 760, duration: 0.08, type: 'sine', gain: 0.052 },
+  win: { startHz: 420, endHz: 660, duration: 0.18, type: 'triangle', gain: 0.091 },
+  fail: { startHz: 190, endHz: 120, duration: 0.12, type: 'sawtooth', gain: 0.078 }
 };
 
 export function createAudioManager() {

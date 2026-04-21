@@ -362,6 +362,7 @@ textarea {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 6px 0 rgba(53, 37, 18, 0.18);
+  pointer-events: auto;
 }
 
 .hud-settings-menu {
@@ -373,6 +374,7 @@ textarea {
   box-shadow: 0 10px 0 rgba(207, 184, 125, 0.75);
   display: grid;
   gap: 8px;
+  pointer-events: auto;
 }
 
 .hud-settings-menu .screen-button {
