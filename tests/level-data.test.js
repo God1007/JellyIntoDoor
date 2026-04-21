@@ -134,12 +134,25 @@ describe('level data', () => {
     ]);
   });
 
-  it('uses the smaller door dimensions across every level', () => {
+  it('uses the tighter door dimensions across every level', () => {
     LEVELS.forEach((level) => {
       expect(level.door).toMatchObject({
-        width: 68,
-        height: 92
+        width: 60,
+        height: 84
       });
+    });
+  });
+
+  it('retunes level 2-2 around a stronger spring-assisted route', () => {
+    const springPen = LEVELS.find((level) => level.id === '2-2');
+
+    expect(springPen.springs[0]).toMatchObject({
+      boost: 1.97,
+      launchBoost: 827
+    });
+    expect(springPen.door).toMatchObject({
+      width: 60,
+      height: 84
     });
   });
 

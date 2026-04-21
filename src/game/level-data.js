@@ -72,8 +72,8 @@ function door(id, x, y, requiresButton = null) {
     id,
     x,
     y,
-    width: 68,
-    height: 92,
+    width: 60,
+    height: 84,
     requiresButton,
     open: !requiresButton
   };
@@ -266,7 +266,7 @@ const RAW_LEVELS = [
     door: door('door-2-2', 780, 218),
     platforms: [platform(60, 460, 840, 40, 'ground'), platform(600, 250, 160, 18, 'goal-ledge')],
     walls: [],
-    springs: [spring(310, 438, 90, 22, 1.45, 'spring-2-2')],
+    springs: [spring(310, 438, 90, 22, 1.97, 'spring-2-2')],
     fans: [],
     buttons: [],
     fragileFloors: [],
