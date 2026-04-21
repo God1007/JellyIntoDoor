@@ -1,82 +1,151 @@
-const DEFAULT_MAX_DRAG_DISTANCE = 140;
+const JOYSTICK_RADIUS = 56;
 
-function clonePoint(point) {
-  return point ? { x: point.x, y: point.y } : null;
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
-function computeDragState(pointer, blobCenter) {
-  const dragVector = {
-    x: pointer.x - blobCenter.x,
-    y: pointer.y - blobCenter.y
-  };
-  const dragDistance = Math.hypot(dragVector.x, dragVector.y);
+function resolveMoveX(input) {
+  const keyboardAxis =
+    (input.keyboard.right ? 1 : 0) - (input.keyboard.left ? 1 : 0);
 
-  return {
-    dragVector,
-    dragDistance,
-    dragPower: DEFAULT_MAX_DRAG_DISTANCE > 0
-      ? Math.min(1, dragDistance / DEFAULT_MAX_DRAG_DISTANCE)
-      : 0
-  };
+  if (keyboardAxis !== 0) {
+    return keyboardAxis;
+  }
+
+  return clamp((input.joystick.knob.x ?? 0) / JOYSTICK_RADIUS, -1, 1);
 }
 
 export function createInputState() {
   return {
-    activePointerId: null,
-    charging: false,
-    released: false,
-    pointerPosition: null,
-    blobCenter: null,
-    dragVector: { x: 0, y: 0 },
-    dragDistance: 0,
-    dragPower: 0
+    moveX: 0,
+    jumpPressed: false,
+    jumpHeld: false,
+    keyboard: {
+      left: false,
+      right: false
+    },
+    joystick: {
+      pointerId: null,
+      origin: null,
+      knob: { x: 0, y: 0 }
+    },
+    jumpTouchId: null
   };
 }
 
-export function beginPointerCharge(input, pointerId, enabled = true) {
-  if (!enabled) {
+export function setKeyboardDirection(input, key, pressed) {
+  const next = {
+    ...input,
+    keyboard: {
+      ...input.keyboard,
+      [key]: pressed
+    }
+  };
+
+  return {
+    ...next,
+    moveX: resolveMoveX(next)
+  };
+}
+
+export function setJumpPressed(input, pressed) {
+  return {
+    ...input,
+    jumpPressed: pressed ? true : input.jumpPressed,
+    jumpHeld: pressed
+  };
+}
+
+export function markJumpConsumed(input) {
+  return {
+    ...input,
+    jumpPressed: false
+  };
+}
+
+export function beginJoystick(input, pointerId, origin) {
+  return {
+    ...input,
+    joystick: {
+      pointerId,
+      origin: { ...origin },
+      knob: { x: 0, y: 0 }
+    },
+    moveX: resolveMoveX({
+      ...input,
+      joystick: {
+        pointerId,
+        origin: { ...origin },
+        knob: { x: 0, y: 0 }
+      }
+    })
+  };
+}
+
+export function updateJoystick(input, pointer) {
+  if (input.joystick.pointerId !== pointer.id) {
+    return input;
+  }
+
+  const dx = pointer.x - input.joystick.origin.x;
+  const dy = pointer.y - input.joystick.origin.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const scale = Math.min(1, JOYSTICK_RADIUS / length);
+  const knob = {
+    x: dx * scale,
+    y: dy * scale
+  };
+  const next = {
+    ...input,
+    joystick: {
+      ...input.joystick,
+      knob
+    }
+  };
+
+  return {
+    ...next,
+    moveX: resolveMoveX(next)
+  };
+}
+
+export function endJoystick(input, pointerId) {
+  if (input.joystick.pointerId !== pointerId) {
+    return input;
+  }
+
+  const next = {
+    ...input,
+    joystick: {
+      pointerId: null,
+      origin: null,
+      knob: { x: 0, y: 0 }
+    }
+  };
+
+  return {
+    ...next,
+    moveX: resolveMoveX(next)
+  };
+}
+
+export function beginJumpTouch(input, pointerId) {
+  return {
+    ...input,
+    jumpTouchId: pointerId,
+    jumpPressed: true,
+    jumpHeld: true
+  };
+}
+
+export function endJumpTouch(input, pointerId) {
+  if (input.jumpTouchId !== pointerId) {
     return input;
   }
 
   return {
     ...input,
-    activePointerId: pointerId,
-    charging: true,
-    released: false,
-    pointerPosition: null,
-    blobCenter: null,
-    dragVector: { x: 0, y: 0 },
-    dragDistance: 0,
-    dragPower: 0
-  };
-}
-
-export function updateDragIntent(input, pointer, blobCenter) {
-  if (
-    input.activePointerId !== null &&
-    pointer.id !== undefined &&
-    pointer.id !== input.activePointerId
-  ) {
-    return input;
-  }
-
-  const dragState = computeDragState(pointer, blobCenter);
-
-  return {
-    ...input,
-    charging: true,
-    released: false,
-    pointerPosition: clonePoint(pointer),
-    blobCenter: clonePoint(blobCenter),
-    ...dragState
-  };
-}
-
-export function releasePointerCharge(input) {
-  return {
-    ...input,
-    activePointerId: null,
-    charging: false,
-    released: true
+    jumpTouchId: null,
+    jumpHeld: false
   };
 }

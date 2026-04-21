@@ -1,51 +1,68 @@
 import { describe, expect, it } from 'vitest';
 import {
-  beginPointerCharge,
+  beginJumpTouch,
+  beginJoystick,
   createInputState,
-  releasePointerCharge,
-  updateDragIntent
+  endJumpTouch,
+  endJoystick,
+  markJumpConsumed,
+  setJumpPressed,
+  setKeyboardDirection,
+  updateJoystick
 } from '../src/game/input.js';
 
 describe('input intent', () => {
-  it('begins a pointer charge for a specific pointer id', () => {
-    expect(beginPointerCharge(createInputState(), 7)).toMatchObject({
-      activePointerId: 7,
-      charging: true,
-      released: false
-    });
+  it('derives moveX from keyboard state', () => {
+    const left = setKeyboardDirection(createInputState(), 'left', true);
+    const right = setKeyboardDirection(left, 'right', true);
+    const neutral = setKeyboardDirection(right, 'left', false);
+
+    expect(left.moveX).toBe(-1);
+    expect(right.moveX).toBe(0);
+    expect(neutral.moveX).toBe(1);
   });
 
-  it('ignores a charge attempt when launching is not allowed', () => {
-    const input = createInputState();
+  it('queues a one-frame jump press and keeps held state until released', () => {
+    const pressed = setJumpPressed(createInputState(), true);
+    const consumed = markJumpConsumed(pressed);
+    const released = setJumpPressed(consumed, false);
 
-    expect(beginPointerCharge(input, 7, false)).toEqual(input);
+    expect(pressed.jumpPressed).toBe(true);
+    expect(pressed.jumpHeld).toBe(true);
+    expect(consumed.jumpPressed).toBe(false);
+    expect(released.jumpHeld).toBe(false);
   });
 
-  it('stores pointer drag relative to the blob center', () => {
-    const charging = beginPointerCharge(createInputState(), 7);
-    const next = updateDragIntent(
-      charging,
-      { id: 7, x: 180, y: 260 },
-      { x: 120, y: 220 }
-    );
+  it('normalizes joystick motion into moveX', () => {
+    const started = beginJoystick(createInputState(), 11, { x: 120, y: 400 });
+    const moved = updateJoystick(started, { id: 11, x: 170, y: 400 });
 
-    expect(next.dragVector).toEqual({ x: 60, y: 40 });
-    expect(next.dragDistance).toBeCloseTo(Math.hypot(60, 40), 5);
+    expect(moved.joystick.pointerId).toBe(11);
+    expect(moved.moveX).toBeGreaterThan(0.85);
   });
 
-  it('clears charge state when the pointer is released', () => {
-    const charging = updateDragIntent(
-      beginPointerCharge(createInputState(), 7),
-      { id: 7, x: 180, y: 260 },
-      { x: 120, y: 220 }
-    );
-    const released = releasePointerCharge(charging);
+  it('ignores joystick updates from another pointer id', () => {
+    const started = beginJoystick(createInputState(), 11, { x: 120, y: 400 });
+    const moved = updateJoystick(started, { id: 99, x: 170, y: 400 });
 
-    expect(released).toMatchObject({
-      activePointerId: null,
-      charging: false,
-      released: true
-    });
-    expect(released.dragVector).toEqual({ x: 60, y: 40 });
+    expect(moved).toEqual(started);
+  });
+
+  it('clears moveX when the joystick ends', () => {
+    const started = beginJoystick(createInputState(), 11, { x: 120, y: 400 });
+    const moved = updateJoystick(started, { id: 11, x: 170, y: 400 });
+    const ended = endJoystick(moved, 11);
+
+    expect(ended.joystick.pointerId).toBeNull();
+    expect(ended.moveX).toBe(0);
+  });
+
+  it('uses a touch jump button as a jump source', () => {
+    const started = beginJumpTouch(createInputState(), 21);
+    const ended = endJumpTouch(started, 21);
+
+    expect(started.jumpPressed).toBe(true);
+    expect(started.jumpHeld).toBe(true);
+    expect(ended.jumpHeld).toBe(false);
   });
 });
