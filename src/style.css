@@ -76,6 +76,11 @@ textarea {
   pointer-events: none;
 }
 
+.ui-root[data-screen='hud'] {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
 .ui-root > * {
   pointer-events: auto;
 }
@@ -416,6 +421,7 @@ textarea {
   justify-content: space-between;
   align-items: end;
   pointer-events: none;
+  touch-action: none;
 }
 
 .hud-touch-joystick,
@@ -427,6 +433,9 @@ textarea {
   width: 124px;
   height: 124px;
   pointer-events: auto;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
   border-radius: 50%;
   border: 3px solid var(--ink);
   background: rgba(255, 250, 239, 0.82);
@@ -448,6 +457,9 @@ textarea {
   min-width: 108px;
   min-height: 108px;
   pointer-events: auto;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
   border: 3px solid var(--ink);
   border-radius: 50%;
   background: var(--peach);

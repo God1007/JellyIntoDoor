@@ -50,4 +50,11 @@ describe('mobile layout stylesheet', () => {
     expect(stylesheet).toMatch(/\.hud-touch-joystick\s*\{[^}]*pointer-events:\s*auto;/s);
     expect(stylesheet).toMatch(/\.hud-touch-jump\s*\{[^}]*pointer-events:\s*auto;/s);
   });
+
+  it('disables native touch gestures while the in-level hud is active', () => {
+    expect(stylesheet).toMatch(/\.ui-root\[data-screen='hud'\]\s*\{[^}]*touch-action:\s*none;/s);
+    expect(stylesheet).toMatch(/\.hud-touch-controls\s*\{[^}]*touch-action:\s*none;/s);
+    expect(stylesheet).toMatch(/\.hud-touch-joystick\s*\{[^}]*touch-action:\s*none;/s);
+    expect(stylesheet).toMatch(/\.hud-touch-jump\s*\{[^}]*touch-action:\s*none;/s);
+  });
 });
