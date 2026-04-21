@@ -130,4 +130,32 @@ describe('level runtime', () => {
     expect(result.brokeFloorIds).toEqual(['floor-1']);
     expect(result.runtime.fragileFloors['floor-1'].broken).toBe(true);
   });
+
+  it('blocks the door until every star in the level is collected', () => {
+    const level = createTestLevel();
+    level.doors[0].open = true;
+    const runtime = createLevelRuntime(level);
+    const blob = createBlobState({ x: 104, y: 48 });
+
+    const result = stepLevelRuntime(level, runtime, blob, 1 / 60);
+
+    expect(result.enteredDoor).toBe(false);
+    expect(result.blockedDoor).toBe(true);
+    expect(result.remainingStars).toBe(1);
+  });
+
+  it('lets the blob enter the door after the final star is collected', () => {
+    const level = createTestLevel();
+    level.doors[0].open = true;
+    const runtime = createLevelRuntime(level);
+    const collector = createBlobState({ x: 150, y: 52 });
+    const afterStar = stepLevelRuntime(level, runtime, collector, 1 / 60);
+    const blobAtDoor = createBlobState({ x: 104, y: 48 });
+
+    const result = stepLevelRuntime(level, afterStar.runtime, blobAtDoor, 1 / 60);
+
+    expect(result.enteredDoor).toBe(true);
+    expect(result.blockedDoor).toBe(false);
+    expect(result.remainingStars).toBe(0);
+  });
 });

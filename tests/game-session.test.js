@@ -139,4 +139,105 @@ describe('game session', () => {
     expect(relaunched.lastFrameEvents.launched).toBe(true);
     expect(relaunched.blob.stuckToWall).toBe(false);
   });
+
+  it('keeps the session playing when the blob touches the door before collecting every star', () => {
+    const level = {
+      id: 'door-gate-test',
+      name: 'Door Gate Test',
+      world: { width: 320, height: 240 },
+      spawn: { x: 100, y: 60 },
+      medalTargets: { goldTime: 1000, silverTime: 1500, goldLaunches: 1, silverLaunches: 2 },
+      starsTotal: 1,
+      platforms: [],
+      walls: [],
+      buttons: [],
+      doors: [
+        {
+          id: 'door-1',
+          x: 90,
+          y: 20,
+          width: 68,
+          height: 92,
+          open: true
+        }
+      ],
+      stars: [{ id: 'star-1', x: 250, y: 60, radius: 12 }],
+      pickups: [],
+      springs: [],
+      fans: [],
+      fragileFloors: []
+    };
+    const runtime = createLevelRuntime(level);
+    const session = {
+      levelIndex: 0,
+      level,
+      status: 'playing',
+      launches: 0,
+      elapsedMs: 0,
+      collectedStars: 0,
+      blob: {
+        ...createBlobState({ x: 108, y: 56 }),
+        skinId: 'peach',
+        canLaunch: true
+      },
+      runtime,
+      result: null,
+      lastFrameEvents: {
+        launched: false,
+        pickedAbility: null,
+        collectedStars: [],
+        enteredDoor: false,
+        blockedDoor: false,
+        remainingStars: 0,
+        failed: false
+      }
+    };
+
+    const next = stepGameSession(session, {
+      dt: 1 / 60,
+      input: {}
+    });
+
+    expect(next.status).toBe('playing');
+    expect(next.lastFrameEvents.enteredDoor).toBe(false);
+    expect(next.lastFrameEvents.blockedDoor).toBe(true);
+    expect(next.lastFrameEvents.remainingStars).toBe(1);
+  });
+
+  it('wins the session when the blob reaches the door after collecting every star', () => {
+    const session = createGameSession({ levelIndex: 0 });
+    const runtime = createLevelRuntime(session.level);
+    runtime.collectedStarIds = session.level.stars.map((star) => star.id);
+    runtime.stars = Object.fromEntries(
+      session.level.stars.map((star) => [star.id, { ...star, collected: true }])
+    );
+    const next = stepGameSession(
+      {
+        ...session,
+        runtime,
+        collectedStars: runtime.collectedStarIds.length,
+        blob: {
+          ...session.blob,
+          position: {
+            x: session.level.door.x + session.level.door.width / 2,
+            y: session.level.door.y + session.level.door.height / 2
+          },
+          velocity: { x: 0, y: 0 }
+        },
+        lastFrameEvents: {
+          ...session.lastFrameEvents,
+          blockedDoor: false,
+          remainingStars: 0
+        }
+      },
+      {
+        dt: 1 / 60,
+        input: {}
+      }
+    );
+
+    expect(next.status).toBe('won');
+    expect(next.lastFrameEvents.enteredDoor).toBe(true);
+    expect(next.lastFrameEvents.blockedDoor).toBe(false);
+  });
 });

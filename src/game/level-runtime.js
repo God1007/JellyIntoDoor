@@ -125,6 +125,7 @@ export function stepLevelRuntime(level, runtime, blob, dt) {
   const brokeFloorIds = [];
   let pickedAbility = null;
   let enteredDoor = false;
+  let blockedDoor = false;
   let launchBoost = { x: 0, y: 0 };
   let landedOnSpring = null;
   let forces = { x: 0, y: 0 };
@@ -263,6 +264,8 @@ export function stepLevelRuntime(level, runtime, blob, dt) {
     brokeFloorIds.push(floor.id);
   }
 
+  const remainingStars = Math.max(0, (level.stars ?? []).length - nextRuntime.collectedStarIds.length);
+
   for (const door of level.doors ?? []) {
     const runtimeDoor = nextRuntime.doors[door.id];
 
@@ -270,10 +273,17 @@ export function stepLevelRuntime(level, runtime, blob, dt) {
       continue;
     }
 
-    if (intersectsCircleRect(blob, door)) {
-      enteredDoor = true;
+    if (!intersectsCircleRect(blob, door)) {
+      continue;
+    }
+
+    if (remainingStars > 0) {
+      blockedDoor = true;
       break;
     }
+
+    enteredDoor = true;
+    break;
   }
 
   return {
@@ -282,6 +292,8 @@ export function stepLevelRuntime(level, runtime, blob, dt) {
     launchBoost,
     landedOnSpring,
     enteredDoor,
+    blockedDoor,
+    remainingStars,
     collectedStars,
     pickedAbility,
     brokeFloorIds,

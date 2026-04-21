@@ -135,6 +135,8 @@ export function createGameSession({ levelIndex, skinId = 'peach' }) {
       pickedAbility: null,
       collectedStars: [],
       enteredDoor: false,
+      blockedDoor: false,
+      remainingStars: 0,
       failed: false
     }
   };
@@ -266,6 +268,8 @@ export function stepGameSession(session, frame) {
       pickedAbility: runtimeStep.pickedAbility,
       collectedStars: runtimeStep.collectedStars,
       enteredDoor: runtimeStep.enteredDoor,
+      blockedDoor: runtimeStep.blockedDoor,
+      remainingStars: runtimeStep.remainingStars,
       failed
     }
   };
