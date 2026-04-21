@@ -5,7 +5,7 @@ import {
   paletteForSkin,
   resolveBlobFace
 } from '../src/game/render/doodle.js';
-import { renderSkinPicker } from '../src/ui/screens.js';
+import { renderHud, renderSkinPicker } from '../src/ui/screens.js';
 
 describe('render helpers', () => {
   it('preserves point count when jittering a doodle outline', () => {
@@ -54,5 +54,19 @@ describe('render helpers', () => {
     expect(skinButtons).toHaveLength(2);
     expect(root.querySelector('[data-skin-id="mint"]')?.getAttribute('aria-pressed')).toBe('true');
     expect(root.querySelector('[data-skin-id="peach"]')?.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('renders a back-to-title control in the hud actions', () => {
+    const root = document.createElement('section');
+
+    renderHud(root, {
+      levelLabel: '1-1',
+      starsCollected: 0,
+      launches: 0,
+      timeMs: 2000,
+      backLabel: 'Back to title'
+    });
+
+    expect(root.querySelector('[data-action="back-to-title"]')?.textContent).toContain('Back to title');
   });
 });

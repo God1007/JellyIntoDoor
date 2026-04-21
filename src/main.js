@@ -222,6 +222,7 @@ function renderUi() {
     starsCollected: session.runtime.collectedStarIds.length,
     timeMs: session.elapsedMs,
     paused,
+    backLabel: '返回',
     hint: session.status === 'failed'
       ? '糊出纸外了，点重试再来一下。'
       : session.blob.ability

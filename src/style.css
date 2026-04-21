@@ -405,11 +405,45 @@ textarea {
   }
 
   .hud-overlay {
+    justify-self: stretch;
+    align-self: end;
     padding:
-      14px
-      14px
-      calc(14px + env(safe-area-inset-bottom, 0px))
-      14px;
+      12px
+      12px
+      calc(12px + env(safe-area-inset-bottom, 0px))
+      12px;
+    border-radius: 18px;
+    gap: 8px;
+  }
+
+  .hud-overlay__row {
+    margin-top: 0;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .hud-chip {
+    padding: 6px 10px;
+    font-size: 0.88rem;
+  }
+
+  .hud-overlay__hint,
+  .hud-overlay__microcopy {
+    display: none;
+  }
+
+  .hud-overlay__actions {
+    margin-top: 0;
+    flex-direction: row;
+    justify-content: stretch;
+    gap: 8px;
+  }
+
+  .hud-overlay__actions .screen-button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 10px 12px;
+    box-shadow: 0 4px 0 rgba(53, 37, 18, 0.16);
   }
 
   .hud-overlay__microcopy {

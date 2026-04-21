@@ -15,4 +15,10 @@ describe('mobile layout stylesheet', () => {
     expect(stylesheet).toContain('@media (max-width: 560px)');
     expect(stylesheet).toContain('max-height: calc(100dvh - 32px)');
   });
+
+  it('docks the hud to the bottom and tightens its content on small phones', () => {
+    expect(stylesheet).toContain('justify-self: stretch;');
+    expect(stylesheet).toContain('align-self: end;');
+    expect(stylesheet).toContain('display: none;');
+  });
 });

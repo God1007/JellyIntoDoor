@@ -155,6 +155,7 @@ export function renderHud(root, model = {}) {
   const timeLabel = model.timeLabel || formatTimeMs(model.timeMs);
   const hint = model.hint || (model.paused ? 'Paused' : 'Keep the blob moving.');
   const pauseLabel = model.paused ? 'Resume' : 'Pause';
+  const backLabel = model.backLabel || 'Back to title';
 
   renderEmptyState(
     root,
@@ -172,6 +173,7 @@ export function renderHud(root, model = {}) {
         <div class="hud-overlay__actions">
           ${cardButton(pauseLabel, model.paused ? 'resume' : 'pause', ' data-secondary="true"')}
           ${cardButton(model.retryLabel || 'Retry', 'retry', ' data-secondary="true"')}
+          ${cardButton(backLabel, 'back-to-title', ' data-secondary="true"')}
         </div>
       </section>
     `
