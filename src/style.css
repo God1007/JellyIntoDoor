@@ -380,6 +380,7 @@ textarea {
 .hud-settings-menu .screen-button {
   width: 100%;
   margin-top: 0;
+  pointer-events: auto;
 }
 
 .hud-center-message {

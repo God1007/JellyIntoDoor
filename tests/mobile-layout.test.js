@@ -39,5 +39,6 @@ describe('mobile layout stylesheet', () => {
     expect(stylesheet).toMatch(/\.hud-settings-anchor\s*\{[^}]*pointer-events:\s*auto;/s);
     expect(stylesheet).toMatch(/\.hud-settings-toggle\s*\{[^}]*pointer-events:\s*auto;/s);
     expect(stylesheet).toMatch(/\.hud-settings-menu\s*\{[^}]*pointer-events:\s*auto;/s);
+    expect(stylesheet).toMatch(/\.hud-settings-menu \.screen-button\s*\{[^}]*pointer-events:\s*auto;/s);
   });
 });
