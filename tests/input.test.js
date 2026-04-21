@@ -7,8 +7,10 @@ import {
   endJumpTouch,
   endJoystick,
   markJumpConsumed,
+  releasePointerCharge,
   setJumpPressed,
   setKeyboardDirection,
+  updateDragIntent,
   updateJoystick
 } from '../src/game/input.js';
 
@@ -67,6 +69,16 @@ describe('input intent', () => {
     expect(ended.jumpHeld).toBe(false);
   });
 
+  it('keeps keyboard jump held when a touch jump is released', () => {
+    const keyboardHeld = setJumpPressed(createInputState(), true);
+    const touchHeld = beginJumpTouch(keyboardHeld, 21);
+    const touchReleased = endJumpTouch(touchHeld, 21);
+
+    expect(keyboardHeld.jumpHeld).toBe(true);
+    expect(touchHeld.jumpHeld).toBe(true);
+    expect(touchReleased.jumpHeld).toBe(true);
+  });
+
   it('preserves an existing joystick owner for duplicate pointerdown', () => {
     const started = beginJoystick(createInputState(), 11, { x: 120, y: 400 });
     const duplicate = beginJoystick(started, 12, { x: 170, y: 400 });
@@ -81,5 +93,41 @@ describe('input intent', () => {
     const duplicate = beginJumpTouch(started, 22);
 
     expect(duplicate).toEqual(started);
+  });
+
+  it('keeps the compatibility path coherent through release', () => {
+    const charged = beginPointerCharge(createInputState(), 7);
+    const dragged = updateDragIntent(
+      charged,
+      { id: 7, x: 180, y: 260 },
+      { x: 120, y: 220 }
+    );
+    const released = releasePointerCharge(dragged);
+
+    expect(charged.joystick.pointerId).toBeNull();
+    expect(dragged).toMatchObject({
+      activePointerId: 7,
+      charging: true,
+      released: false,
+      pointerPosition: { x: 180, y: 260 },
+      blobCenter: { x: 120, y: 220 },
+      dragVector: { x: 60, y: 40 },
+      dragDistance: Math.hypot(60, 40)
+    });
+    expect(dragged.joystick).toMatchObject({
+      pointerId: 7,
+      origin: { x: 120, y: 220 },
+      knob: { x: expect.any(Number), y: expect.any(Number) }
+    });
+    expect(released).toMatchObject({
+      activePointerId: null,
+      charging: false,
+      released: true,
+      pointerPosition: { x: 180, y: 260 },
+      blobCenter: { x: 120, y: 220 },
+      dragVector: { x: 60, y: 40 },
+      dragDistance: Math.hypot(60, 40)
+    });
+    expect(released.joystick.pointerId).toBeNull();
   });
 });

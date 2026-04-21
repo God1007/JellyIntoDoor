@@ -39,11 +39,23 @@ function createLegacyChargeState() {
   };
 }
 
+function resolveJumpHeld(input) {
+  return Boolean(input.keyboardJumpHeld || input.jumpTouchId !== null);
+}
+
+function withJumpHeld(input) {
+  return {
+    ...input,
+    jumpHeld: resolveJumpHeld(input)
+  };
+}
+
 export function createInputState() {
   return {
     moveX: 0,
     jumpPressed: false,
     jumpHeld: false,
+    keyboardJumpHeld: false,
     keyboard: {
       left: false,
       right: false
@@ -71,11 +83,13 @@ export function setKeyboardDirection(input, key, pressed) {
 }
 
 export function setJumpPressed(input, pressed) {
-  return {
+  const next = {
     ...input,
-    jumpPressed: pressed ? true : input.jumpPressed,
-    jumpHeld: pressed
+    keyboardJumpHeld: pressed,
+    jumpPressed: pressed ? true : input.jumpPressed
   };
+
+  return withJumpHeld(next);
 }
 
 export function markJumpConsumed(input) {
@@ -148,12 +162,11 @@ export function beginJumpTouch(input, pointerId) {
     return input;
   }
 
-  return {
+  return withJumpHeld({
     ...input,
     jumpTouchId: pointerId,
-    jumpPressed: true,
-    jumpHeld: true
-  };
+    jumpPressed: true
+  });
 }
 
 export function endJumpTouch(input, pointerId) {
@@ -161,11 +174,10 @@ export function endJumpTouch(input, pointerId) {
     return input;
   }
 
-  return {
+  return withJumpHeld({
     ...input,
     jumpTouchId: null,
-    jumpHeld: false
-  };
+  });
 }
 
 export function beginPointerCharge(input, pointerId, enabled = true) {
@@ -182,12 +194,7 @@ export function beginPointerCharge(input, pointerId, enabled = true) {
     blobCenter: null,
     dragVector: { x: 0, y: 0 },
     dragDistance: 0,
-    dragPower: 0,
-    joystick: {
-      pointerId,
-      origin: null,
-      knob: { x: 0, y: 0 }
-    }
+    dragPower: 0
   };
 
   return withMoveX(next);
