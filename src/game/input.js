@@ -33,7 +33,11 @@ export function createInputState() {
   };
 }
 
-export function beginPointerCharge(input, pointerId) {
+export function beginPointerCharge(input, pointerId, enabled = true) {
+  if (!enabled) {
+    return input;
+  }
+
   return {
     ...input,
     activePointerId: pointerId,

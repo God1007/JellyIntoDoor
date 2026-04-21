@@ -15,6 +15,12 @@ describe('input intent', () => {
     });
   });
 
+  it('ignores a charge attempt when launching is not allowed', () => {
+    const input = createInputState();
+
+    expect(beginPointerCharge(input, 7, false)).toEqual(input);
+  });
+
   it('stores pointer drag relative to the blob center', () => {
     const charging = beginPointerCharge(createInputState(), 7);
     const next = updateDragIntent(

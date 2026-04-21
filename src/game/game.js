@@ -7,6 +7,10 @@ import { createLevelRuntime, stepLevelRuntime } from './level-runtime.js';
 const ABILITY_DURATION_MS = 6500;
 const OUT_OF_BOUNDS_MARGIN = 160;
 
+function hasMotion(vector) {
+  return Boolean(vector && (vector.x || vector.y));
+}
+
 function buildLevelSurfaces(level, runtime) {
   const brokenFloorIds = new Set(runtime?.brokenFloorIds ?? []);
   const staticSurfaces = (level.platforms ?? []).filter((surface) => {
@@ -46,7 +50,7 @@ function applyAbilityTimer(blob, dt) {
 }
 
 function applyEnvironmentalForces(blob, forces, dt) {
-  if (!forces || (!forces.x && !forces.y)) {
+  if (blob.stuckToWall || !forces || (!forces.x && !forces.y)) {
     return blob;
   }
 
@@ -60,7 +64,7 @@ function applyEnvironmentalForces(blob, forces, dt) {
 }
 
 function applyLaunchBoost(blob, launchBoost) {
-  if (!launchBoost || (!launchBoost.x && !launchBoost.y)) {
+  if (!hasMotion(launchBoost)) {
     return blob;
   }
 
@@ -69,7 +73,42 @@ function applyLaunchBoost(blob, launchBoost) {
     velocity: {
       x: blob.velocity.x + launchBoost.x,
       y: blob.velocity.y + launchBoost.y
-    }
+    },
+    grounded: false,
+    canLaunch: false,
+    stuckToWall: false
+  };
+}
+
+function isLaunchRequested(input) {
+  return Boolean(
+    input?.released &&
+      (input.charging || input.dragDistance > 0 || input.dragPower > 0)
+  );
+}
+
+function canBlobLaunch(blob) {
+  return Boolean(blob.canLaunch);
+}
+
+function shouldStickToWall(blob, collision) {
+  if (blob.ability !== 'sticky') {
+    return false;
+  }
+
+  return (collision.collisions ?? []).some((entry) => {
+    return entry.wall && entry.rect?.type === 'sticky-wall';
+  });
+}
+
+function createHeldWallCollision(blob) {
+  return {
+    body: {
+      ...blob,
+      velocity: { x: 0, y: 0 }
+    },
+    collisions: [],
+    grounded: false
   };
 }
 
@@ -127,12 +166,15 @@ export function stepGameSession(session, frame) {
   let blob = applyAbilityTimer(session.blob, dt);
   let launched = false;
 
-  if (
-    frame.input?.released &&
-    (frame.input.charging ||
-      frame.input.dragDistance > 0 ||
-      frame.input.dragPower > 0)
-  ) {
+  if (blob.stuckToWall && blob.ability !== 'sticky') {
+    blob = {
+      ...blob,
+      canLaunch: false,
+      stuckToWall: false
+    };
+  }
+
+  if (isLaunchRequested(frame.input) && canBlobLaunch(blob)) {
     const launch = getLaunchVelocity(frame.input.dragVector, blob.ability);
     blob = {
       ...blob,
@@ -140,38 +182,44 @@ export function stepGameSession(session, frame) {
         x: launch.x,
         y: launch.y
       },
-      grounded: false
+      grounded: false,
+      canLaunch: false,
+      stuckToWall: false
     };
     launches += 1;
     launched = true;
   }
 
-  const heavyGravity = blob.ability === 'heavy' ? 900 : 0;
-  const steppedBlob = integrateVelocity(
-    {
-      ...blob,
-      acceleration: {
-        x: 0,
-        y: heavyGravity
-      },
-      force: {
-        x: 0,
-        y: 0
-      }
-    },
-    dt
-  );
-  const collision = resolveWorldCollision(
-    steppedBlob,
-    buildLevelSurfaces(level, session.runtime),
-    {
-      restitution: blob.ability === 'elastic' ? 0.34 : 0.16,
-      friction: 0.12
-    }
-  );
+  const collision = blob.stuckToWall
+    ? createHeldWallCollision(blob)
+    : resolveWorldCollision(
+        integrateVelocity(
+          {
+            ...blob,
+            acceleration: {
+              x: 0,
+              y: blob.ability === 'heavy' ? 900 : 0
+            },
+            force: {
+              x: 0,
+              y: 0
+            }
+          },
+          dt
+        ),
+        buildLevelSurfaces(level, session.runtime),
+        {
+          restitution: blob.ability === 'elastic' ? 0.34 : 0.16,
+          friction: 0.12
+        }
+      );
+  const stuckToWall = blob.stuckToWall || shouldStickToWall(blob, collision);
   blob = {
     ...collision.body,
-    grounded: collision.grounded,
+    grounded: stuckToWall ? false : collision.grounded,
+    canLaunch: stuckToWall || collision.grounded,
+    stuckToWall,
+    velocity: stuckToWall ? { x: 0, y: 0 } : collision.body.velocity,
     skinId: session.blob.skinId
   };
 

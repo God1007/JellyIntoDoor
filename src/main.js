@@ -420,7 +420,16 @@ canvas.addEventListener('pointerdown', (event) => {
   }
 
   const point = pointFromEvent(event);
-  inputState = beginPointerCharge(inputState, event.pointerId);
+  inputState = beginPointerCharge(
+    inputState,
+    event.pointerId,
+    Boolean(session.blob.canLaunch)
+  );
+
+  if (!inputState.charging) {
+    return;
+  }
+
   inputState = updateDragIntent(inputState, point, session.blob.position);
   canvas.setPointerCapture(event.pointerId);
   event.preventDefault();

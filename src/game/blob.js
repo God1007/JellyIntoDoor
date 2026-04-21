@@ -14,7 +14,10 @@ export function createBlobState(position) {
     velocity: { x: 0, y: 0 },
     radius: DEFAULT_BLOB_RADIUS,
     ability: null,
+    abilityTimerMs: 0,
     grounded: false,
+    canLaunch: true,
+    stuckToWall: false,
     launchCharge: 0,
     squash: 0,
     stretch: 0

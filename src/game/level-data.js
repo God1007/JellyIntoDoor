@@ -200,7 +200,7 @@ const RAW_LEVELS = [
     door: door('door-1-3', 770, 348),
     platforms: [platform(60, 460, 840, 40, 'ground'), platform(420, 332, 260, 18, 'tunnel-roof')],
     walls: [
-      wall(420, 350, 30, 110, 'tunnel-wall'),
+      wall(420, 400, 30, 60, 'tunnel-wall'),
       wall(650, 350, 30, 110, 'tunnel-wall')
     ],
     springs: [],
