@@ -1,0 +1,17 @@
+{
+  "name": "doodle-blob-escape-to-the-door",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.0.0"
+  }
+}
