@@ -61,18 +61,56 @@ describe('render helpers', () => {
     expect(root.querySelector('[data-skin-id="peach"]')?.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('renders a back-to-title control in the hud actions', () => {
+  it('renders a settings trigger instead of always-on retry controls', () => {
     const root = document.createElement('section');
 
     renderHud(root, {
-      levelLabel: '1-1',
-      starsCollected: 0,
-      launches: 0,
+      levelText: 'Level 1-1',
+      starsText: 'Stars 0 / 1',
       timeMs: 2000,
-      backLabel: 'Back to title'
+      settingsLabel: 'Settings',
+      hudMenuOpen: false
     });
 
-    expect(root.querySelector('[data-action="back-to-title"]')?.textContent).toContain('Back to title');
+    expect(root.querySelector('[data-action="toggle-settings"]')?.textContent).toContain('Settings');
+    expect(root.querySelector('[data-action="retry"]')).toBeNull();
+    expect(root.querySelector('.hud-status-bar')).toBeTruthy();
+  });
+
+  it('renders the settings actions when the menu is expanded', () => {
+    const root = document.createElement('section');
+
+    renderHud(root, {
+      levelText: 'Level 1-1',
+      starsText: 'Stars 1 / 1',
+      timeMs: 2500,
+      settingsLabel: 'Settings',
+      soundToggleLabel: 'Sound: on',
+      retryLabel: 'Retry',
+      backLabel: 'Back',
+      pauseLabel: 'Pause',
+      hudMenuOpen: true
+    });
+
+    expect(root.querySelector('[data-action="retry"]')?.textContent).toContain('Retry');
+    expect(root.querySelector('[data-action="back-to-title"]')?.textContent).toContain('Back');
+    expect(root.querySelector('[data-action="toggle-sound"]')?.textContent).toContain('Sound: on');
+  });
+
+  it('renders a centered transient hud message when provided', () => {
+    const root = document.createElement('section');
+
+    renderHud(root, {
+      levelText: 'Level 1-1',
+      starsText: 'Stars 0 / 1',
+      timeMs: 2000,
+      settingsLabel: 'Settings',
+      overlayMessage: 'Fell out. Retry and go again.',
+      overlayTone: 'bad'
+    });
+
+    expect(root.querySelector('.hud-center-message')?.textContent).toContain('Fell out');
+    expect(root.querySelector('.hud-center-message')?.className).toContain('bad');
   });
 
   it('renders language toggle buttons on the title screen', () => {

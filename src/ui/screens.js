@@ -201,7 +201,6 @@ export function renderSkinPicker(root, model = {}) {
 
 export function renderHud(root, model = {}) {
   const timeLabel = model.timeLabel || formatTimeMs(model.timeMs);
-  const hint = model.hint || (model.paused ? 'Paused' : 'Keep the blob moving.');
   const pauseLabel = model.paused ? model.resumeLabel || 'Resume' : model.pauseLabel || 'Pause';
   const backLabel = model.backLabel || 'Back to title';
 
@@ -209,21 +208,40 @@ export function renderHud(root, model = {}) {
     root,
     'hud',
     `
-      <section class="hud-overlay">
+      <section class="hud-shell">
         ${renderOrientationBanner(model)}
-        <div class="hud-overlay__row">
-          ${model.levelText ? `<span class="hud-chip">${escapeHtml(model.levelText)}</span>` : model.levelLabel ? `<span class="hud-chip">Level ${escapeHtml(model.levelLabel)}</span>` : ''}
-          ${model.starsText ? `<span class="hud-chip">${escapeHtml(model.starsText)}</span>` : Number.isFinite(model.starsCollected) ? `<span class="hud-chip">Stars ${escapeHtml(model.starsCollected)}</span>` : ''}
-          ${model.launchesText ? `<span class="hud-chip">${escapeHtml(model.launchesText)}</span>` : Number.isFinite(model.launches) ? `<span class="hud-chip">Launches ${escapeHtml(model.launches)}</span>` : ''}
-          ${model.timeText ? `<span class="hud-chip">${escapeHtml(model.timeText)}</span>` : timeLabel ? `<span class="hud-chip">${escapeHtml(timeLabel)}</span>` : ''}
+        <div class="hud-status-bar">
+          ${model.levelText ? `<span class="hud-chip">${escapeHtml(model.levelText)}</span>` : ''}
+          ${model.starsText ? `<span class="hud-chip">${escapeHtml(model.starsText)}</span>` : ''}
+          ${timeLabel ? `<span class="hud-chip">${escapeHtml(timeLabel)}</span>` : ''}
         </div>
-        <p class="hud-overlay__hint">${escapeHtml(hint)}</p>
-        <p class="hud-overlay__microcopy">${escapeHtml(model.microcopy || 'Esc to pause. R to retry.')}</p>
-        <div class="hud-overlay__actions">
-          ${cardButton(pauseLabel, model.paused ? 'resume' : 'pause', ' data-secondary="true"')}
-          ${cardButton(model.retryLabel || 'Retry', 'retry', ' data-secondary="true"')}
-          ${cardButton(backLabel, 'back-to-title', ' data-secondary="true"')}
+        <div class="hud-settings-anchor">
+          <button
+            type="button"
+            class="hud-settings-toggle"
+            data-action="toggle-settings"
+            aria-expanded="${model.hudMenuOpen ? 'true' : 'false'}"
+          >
+            ${escapeHtml(model.settingsLabel || 'Settings')}
+          </button>
+          ${
+            model.hudMenuOpen
+              ? `
+                <div class="hud-settings-menu">
+                  ${cardButton(pauseLabel, model.paused ? 'resume' : 'pause', ' data-secondary="true"')}
+                  ${cardButton(model.retryLabel || 'Retry', 'retry', ' data-secondary="true"')}
+                  ${cardButton(backLabel, 'back-to-title', ' data-secondary="true"')}
+                  ${cardButton(model.soundToggleLabel || 'Sound', 'toggle-sound', ' data-secondary="true"')}
+                </div>
+              `
+              : ''
+          }
         </div>
+        ${
+          model.overlayMessage
+            ? `<p class="hud-center-message hud-center-message--${escapeHtml(model.overlayTone || 'info')}">${escapeHtml(model.overlayMessage)}</p>`
+            : ''
+        }
       </section>
     `
   );

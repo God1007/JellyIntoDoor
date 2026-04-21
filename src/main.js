@@ -46,6 +46,8 @@ let saveProfileState = { ...profile, language: appState.language };
 let inputState = createInputState();
 let effects = [];
 let paused = false;
+let hudMenuOpen = false;
+let overlayMessage = null;
 let session = createGameSession({
   levelIndex: 0,
   skinId: appState.skinId
@@ -115,6 +117,14 @@ function persistProfile(patch = {}) {
   });
 }
 
+function showOverlayMessage(text, tone = 'info', ttlMs = 1600) {
+  overlayMessage = { text, tone, ttlMs };
+}
+
+function clearOverlayMessage() {
+  overlayMessage = null;
+}
+
 function dispatch(action) {
   appState = reduceAppState(appState, action);
   applyDocumentMeta();
@@ -127,6 +137,8 @@ function createFreshSession(levelIndex = appState.selectedLevel) {
     skinId: appState.skinId
   });
   paused = false;
+  hudMenuOpen = false;
+  clearOverlayMessage();
   inputState = createInputState();
   effects = [];
 }
@@ -145,6 +157,8 @@ function retryLevel() {
     skinId: appState.skinId
   });
   paused = false;
+  hudMenuOpen = false;
+  clearOverlayMessage();
   inputState = createInputState();
   effects = [];
   appState = {
@@ -308,25 +322,24 @@ function renderUi() {
     return;
   }
 
-  const hudHint = session.status === 'failed'
-    ? copy('hud.failed')
-    : session.blob.ability
-      ? copy('hud.ability', { ability: getAbilityText(session.blob.ability) })
-      : copy('hud.drag');
-
   renderHud(uiRoot, {
     orientationHint,
     levelText: copy('hud.level', { level: session.level.id }),
-    launchesText: copy('hud.launches', { count: session.launches }),
-    starsText: copy('hud.stars', { count: session.runtime.collectedStarIds.length }),
+    starsText: copy('hud.starsProgress', {
+      count: session.runtime.collectedStarIds.length,
+      total: session.level.starsTotal
+    }),
     timeMs: session.elapsedMs,
     paused,
     pauseLabel: copy('hud.pause'),
     resumeLabel: copy('hud.resume'),
     retryLabel: copy('common.retry'),
     backLabel: copy('hud.back'),
-    hint: paused ? copy('hud.paused') : hudHint,
-    microcopy: copy('hud.microcopy')
+    soundToggleLabel: appState.soundEnabled ? copy('hud.soundOn') : copy('hud.soundOff'),
+    settingsLabel: copy('hud.settings'),
+    hudMenuOpen,
+    overlayMessage: overlayMessage?.text ?? null,
+    overlayTone: overlayMessage?.tone ?? 'info'
   });
 }
 
@@ -383,6 +396,10 @@ uiRoot.addEventListener('click', (event) => {
     case 'toggle-sound':
       toggleSound();
       break;
+    case 'toggle-settings':
+      hudMenuOpen = !hudMenuOpen;
+      renderUi();
+      break;
     case 'set-language':
       setLanguage(trigger.dataset.language ?? DEFAULT_LANGUAGE);
       break;
@@ -419,6 +436,7 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
+  hudMenuOpen = false;
   const point = pointFromEvent(event);
   inputState = beginPointerCharge(
     inputState,
@@ -543,6 +561,17 @@ function frame(now) {
   const dt = Math.min(1 / 30, (now - lastFrameTime) / 1000 || 1 / 60);
   lastFrameTime = now;
   effects = stepEffects(effects, dt);
+
+  if (overlayMessage) {
+    overlayMessage = {
+      ...overlayMessage,
+      ttlMs: overlayMessage.ttlMs - dt * 1000
+    };
+
+    if (overlayMessage.ttlMs <= 0) {
+      clearOverlayMessage();
+    }
+  }
 
   if (appState.screen === 'playing' && !paused) {
     const previousSession = session;

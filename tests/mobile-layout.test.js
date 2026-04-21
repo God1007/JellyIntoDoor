@@ -26,4 +26,11 @@ describe('mobile layout stylesheet', () => {
     expect(stylesheet).toContain('@media (orientation: landscape)');
     expect(stylesheet).toContain('.orientation-banner');
   });
+
+  it('centers a thin landscape status bar and separates the settings menu anchor', () => {
+    expect(stylesheet).toContain('.hud-shell');
+    expect(stylesheet).toContain('.hud-status-bar');
+    expect(stylesheet).toContain('.hud-settings-anchor');
+    expect(stylesheet).toContain('justify-self: center;');
+  });
 });
