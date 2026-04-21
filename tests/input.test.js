@@ -95,6 +95,30 @@ describe('input intent', () => {
     expect(duplicate).toEqual(started);
   });
 
+  it('returns the original state when pointer charge is disabled', () => {
+    const input = createInputState();
+
+    expect(beginPointerCharge(input, 7, false)).toEqual(input);
+  });
+
+  it('ignores a mismatched legacy pointer id during drag updates', () => {
+    const charged = beginPointerCharge(createInputState(), 7);
+    const next = updateDragIntent(
+      charged,
+      { id: 99, x: 180, y: 260 },
+      { x: 120, y: 220 }
+    );
+
+    expect(next).toEqual(charged);
+  });
+
+  it('prevents joystick takeover while legacy charge owns the pointer', () => {
+    const charged = beginPointerCharge(createInputState(), 7);
+    const started = beginJoystick(charged, 12, { x: 170, y: 400 });
+
+    expect(started).toEqual(charged);
+  });
+
   it('keeps the compatibility path coherent through release', () => {
     const charged = beginPointerCharge(createInputState(), 7);
     const dragged = updateDragIntent(

@@ -1,4 +1,5 @@
 const JOYSTICK_RADIUS = 56;
+const LEGACY_DRAG_DISTANCE = 140;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -100,7 +101,7 @@ export function markJumpConsumed(input) {
 }
 
 export function beginJoystick(input, pointerId, origin) {
-  if (input.joystick.pointerId !== null) {
+  if (input.activePointerId !== null || input.joystick.pointerId !== null) {
     return input;
   }
 
@@ -213,7 +214,7 @@ export function updateDragIntent(input, pointer, blobCenter) {
     y: pointer.y - blobCenter.y
   };
   const dragDistance = Math.hypot(dragVector.x, dragVector.y);
-  const dragPower = dragDistance > 0 ? Math.min(1, dragDistance / JOYSTICK_RADIUS) : 0;
+  const dragPower = dragDistance > 0 ? Math.min(1, dragDistance / LEGACY_DRAG_DISTANCE) : 0;
   const length = dragDistance || 1;
   const scale = Math.min(1, JOYSTICK_RADIUS / length);
   const knob = {
