@@ -317,6 +317,7 @@ textarea {
   grid-template-rows: auto auto 1fr;
   align-items: start;
   gap: 12px;
+  pointer-events: none;
 }
 
 .hud-shell .orientation-banner {
@@ -349,6 +350,7 @@ textarea {
   align-self: start;
   display: grid;
   gap: 8px;
+  pointer-events: auto;
 }
 
 .hud-settings-toggle {

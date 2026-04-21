@@ -33,4 +33,9 @@ describe('mobile layout stylesheet', () => {
     expect(stylesheet).toContain('.hud-settings-anchor');
     expect(stylesheet).toContain('justify-self: center;');
   });
+
+  it('lets playfield touches pass through the hud shell while keeping settings clickable', () => {
+    expect(stylesheet).toMatch(/\.hud-shell\s*\{[^}]*pointer-events:\s*none;/s);
+    expect(stylesheet).toMatch(/\.hud-settings-anchor\s*\{[^}]*pointer-events:\s*auto;/s);
+  });
 });
