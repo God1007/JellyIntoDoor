@@ -4,6 +4,10 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function clonePoint(point) {
+  return point ? { x: point.x, y: point.y } : null;
+}
+
 function resolveMoveX(input) {
   const keyboardAxis =
     (input.keyboard.right ? 1 : 0) - (input.keyboard.left ? 1 : 0);
@@ -13,6 +17,26 @@ function resolveMoveX(input) {
   }
 
   return clamp((input.joystick.knob.x ?? 0) / JOYSTICK_RADIUS, -1, 1);
+}
+
+function withMoveX(input) {
+  return {
+    ...input,
+    moveX: resolveMoveX(input)
+  };
+}
+
+function createLegacyChargeState() {
+  return {
+    activePointerId: null,
+    charging: false,
+    released: false,
+    pointerPosition: null,
+    blobCenter: null,
+    dragVector: { x: 0, y: 0 },
+    dragDistance: 0,
+    dragPower: 0
+  };
 }
 
 export function createInputState() {
@@ -29,7 +53,8 @@ export function createInputState() {
       origin: null,
       knob: { x: 0, y: 0 }
     },
-    jumpTouchId: null
+    jumpTouchId: null,
+    ...createLegacyChargeState()
   };
 }
 
@@ -42,10 +67,7 @@ export function setKeyboardDirection(input, key, pressed) {
     }
   };
 
-  return {
-    ...next,
-    moveX: resolveMoveX(next)
-  };
+  return withMoveX(next);
 }
 
 export function setJumpPressed(input, pressed) {
@@ -64,22 +86,20 @@ export function markJumpConsumed(input) {
 }
 
 export function beginJoystick(input, pointerId, origin) {
-  return {
+  if (input.joystick.pointerId !== null) {
+    return input;
+  }
+
+  const next = {
     ...input,
     joystick: {
       pointerId,
-      origin: { ...origin },
+      origin: clonePoint(origin),
       knob: { x: 0, y: 0 }
-    },
-    moveX: resolveMoveX({
-      ...input,
-      joystick: {
-        pointerId,
-        origin: { ...origin },
-        knob: { x: 0, y: 0 }
-      }
-    })
+    }
   };
+
+  return withMoveX(next);
 }
 
 export function updateJoystick(input, pointer) {
@@ -103,10 +123,7 @@ export function updateJoystick(input, pointer) {
     }
   };
 
-  return {
-    ...next,
-    moveX: resolveMoveX(next)
-  };
+  return withMoveX(next);
 }
 
 export function endJoystick(input, pointerId) {
@@ -123,13 +140,14 @@ export function endJoystick(input, pointerId) {
     }
   };
 
-  return {
-    ...next,
-    moveX: resolveMoveX(next)
-  };
+  return withMoveX(next);
 }
 
 export function beginJumpTouch(input, pointerId) {
+  if (input.jumpTouchId !== null) {
+    return input;
+  }
+
   return {
     ...input,
     jumpTouchId: pointerId,
@@ -148,4 +166,85 @@ export function endJumpTouch(input, pointerId) {
     jumpTouchId: null,
     jumpHeld: false
   };
+}
+
+export function beginPointerCharge(input, pointerId, enabled = true) {
+  if (!enabled || input.activePointerId !== null || input.joystick.pointerId !== null) {
+    return input;
+  }
+
+  const next = {
+    ...input,
+    activePointerId: pointerId,
+    charging: true,
+    released: false,
+    pointerPosition: null,
+    blobCenter: null,
+    dragVector: { x: 0, y: 0 },
+    dragDistance: 0,
+    dragPower: 0,
+    joystick: {
+      pointerId,
+      origin: null,
+      knob: { x: 0, y: 0 }
+    }
+  };
+
+  return withMoveX(next);
+}
+
+export function updateDragIntent(input, pointer, blobCenter) {
+  const pointerMatchesLegacy = input.activePointerId === pointer.id;
+  const pointerMatchesJoystick = input.joystick.pointerId === pointer.id;
+
+  if (pointer.id !== undefined && !pointerMatchesLegacy && !pointerMatchesJoystick) {
+    return input;
+  }
+
+  const dragVector = {
+    x: pointer.x - blobCenter.x,
+    y: pointer.y - blobCenter.y
+  };
+  const dragDistance = Math.hypot(dragVector.x, dragVector.y);
+  const dragPower = dragDistance > 0 ? Math.min(1, dragDistance / JOYSTICK_RADIUS) : 0;
+  const length = dragDistance || 1;
+  const scale = Math.min(1, JOYSTICK_RADIUS / length);
+  const knob = {
+    x: dragVector.x * scale,
+    y: dragVector.y * scale
+  };
+  const next = {
+    ...input,
+    activePointerId: input.activePointerId ?? pointer.id ?? null,
+    charging: true,
+    released: false,
+    pointerPosition: clonePoint(pointer),
+    blobCenter: clonePoint(blobCenter),
+    dragVector,
+    dragDistance,
+    dragPower,
+    joystick: {
+      pointerId: input.joystick.pointerId ?? input.activePointerId ?? pointer.id ?? null,
+      origin: clonePoint(blobCenter),
+      knob
+    }
+  };
+
+  return withMoveX(next);
+}
+
+export function releasePointerCharge(input) {
+  const next = {
+    ...input,
+    activePointerId: null,
+    charging: false,
+    released: true,
+    joystick: {
+      pointerId: null,
+      origin: null,
+      knob: { x: 0, y: 0 }
+    }
+  };
+
+  return withMoveX(next);
 }

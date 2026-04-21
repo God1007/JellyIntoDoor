@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   beginJumpTouch,
   beginJoystick,
+  beginPointerCharge,
   createInputState,
   endJumpTouch,
   endJoystick,
@@ -64,5 +65,21 @@ describe('input intent', () => {
     expect(started.jumpPressed).toBe(true);
     expect(started.jumpHeld).toBe(true);
     expect(ended.jumpHeld).toBe(false);
+  });
+
+  it('preserves an existing joystick owner for duplicate pointerdown', () => {
+    const started = beginJoystick(createInputState(), 11, { x: 120, y: 400 });
+    const duplicate = beginJoystick(started, 12, { x: 170, y: 400 });
+    const legacyAttempt = beginPointerCharge(started, 12);
+
+    expect(duplicate).toEqual(started);
+    expect(legacyAttempt).toEqual(started);
+  });
+
+  it('preserves an existing jump owner for duplicate pointerdown', () => {
+    const started = beginJumpTouch(createInputState(), 21);
+    const duplicate = beginJumpTouch(started, 22);
+
+    expect(duplicate).toEqual(started);
   });
 });
